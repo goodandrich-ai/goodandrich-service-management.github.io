@@ -2234,9 +2234,9 @@ function renderWOList(list) {
     return `<span class="status-badge">${s}</span>`;
   };
   const fmtDate = d => {
-    if (!d) return '-';
-    const [y,m,day] = d.split('-');
-    return `${String(parseInt(day)).padStart(2,'0')}/${String(parseInt(m)).padStart(2,'0')}/${parseInt(y)+543}`;
+    const p = _parseDateParts(d);
+    if (!p) return '-';
+    return `${String(p.day).padStart(2,'0')}/${String(p.m).padStart(2,'0')}/${p.y+543}`;
   };
 
   let lastJT = null;
@@ -2320,9 +2320,9 @@ function printWOList() {
   const wos = ids.map(id => workOrders.find(w => w.id === id)).filter(Boolean);
 
   const fmtDate = d => {
-    if (!d) return '-';
-    const [y,m,day] = d.split('-');
-    return `${String(parseInt(day)).padStart(2,'0')}/${String(parseInt(m)).padStart(2,'0')}/${parseInt(y)+543}`;
+    const p = _parseDateParts(d);
+    if (!p) return '-';
+    return `${String(p.day).padStart(2,'0')}/${String(p.m).padStart(2,'0')}/${p.y+543}`;
   };
 
   const now = new Date();
