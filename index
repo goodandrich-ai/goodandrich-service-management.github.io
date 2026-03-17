@@ -1257,6 +1257,7 @@ body {
           <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
           <option value="เสร็จแล้ว">เสร็จแล้ว</option>
         </select>
+        <button class="btn btn-outline btn-sm" onclick="refreshData()" title="โหลดข้อมูลล่าสุดจาก Server" style="white-space:nowrap;">🔄 รีเฟรช</button>
         <button class="btn btn-primary" onclick="showPage('create-wo')">+ ใบสั่งงานใหม่</button>
       </div>
 
@@ -1617,32 +1618,47 @@ body {
 <!-- PRINT SHEET — A5 one page -->
 <div id="print-sheet"></div>
 
+<!-- API LOADING BAR -->
+<div id="api-loading" style="position:fixed;top:0;left:0;height:3px;width:0;background:#FF6B35;z-index:9999;transition:width 0.3s ease,opacity 0.3s ease;pointer-events:none;"></div>
+
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
 <script>
 // ============================
+// GOOGLE SHEETS API
+// ============================
+// TODO: แทนที่ DEPLOYMENT_ID ด้วย Web App deployment ID จาก Apps Script
+const GS_API_URL = 'https://script.google.com/macros/s/AKfycbw4raXWANu5adVVIe9eCh_qO4iQAvUUV4RJ1tUeEkAFMqyBfROP2NFYedUVhvugyMw-/exec';
+
+const gsApi = {
+  async get(action, params = {}) {
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    const res = await fetch(`${GS_API_URL}?${qs}`, { redirect: 'follow' });
+    return res.json();
+  },
+  async post(action, payload) {
+    const body = JSON.stringify({ action, ...payload });
+    const res  = await fetch(GS_API_URL, { method: 'POST', body, redirect: 'follow' });
+    return res.json();
+  }
+};
+
+function apiStart() {
+  const el = document.getElementById('api-loading');
+  if (el) el.style.width = '70%';
+}
+function apiEnd() {
+  const el = document.getElementById('api-loading');
+  if (el) { el.style.width = '100%'; setTimeout(() => { el.style.width = '0'; }, 300); }
+}
+
+// ============================
 // STATE
 // ============================
-let workOrders = JSON.parse(localStorage.getItem('workOrders') || '[]');
-
-// ── Auto-migrate: แปลงวันที่ พ.ศ. → ค.ศ. ถ้ามีข้อมูลเก่า ──
-(function migrateDates() {
-  let changed = false;
-  workOrders.forEach(wo => {
-    if (wo.date) {
-      const y = parseInt(wo.date.split('-')[0]);
-      if (y > 2400) { // เป็น พ.ศ.
-        wo.date = `${y - 543}-${wo.date.slice(5)}`;
-        changed = true;
-      }
-    }
-  });
-  if (changed) {
-    localStorage.setItem('workOrders', JSON.stringify(workOrders));
-  }
-})();
-let woCounter = parseInt(localStorage.getItem('woCounter') || '1');
+let workOrders  = [];
+let technicians = [];
+let woCounter   = 1;
 let currentPlanDate = new Date();
 let currentViewWO = null;
 let editingWOId = null;
@@ -1653,11 +1669,31 @@ let selectedEditTechs = [];
 // ============================
 // INIT
 // ============================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  apiStart();
+  try {
+    const [woRes, techRes, cfgRes] = await Promise.all([
+      gsApi.get('listWorkOrders'),
+      gsApi.get('listTechnicians'),
+      gsApi.get('getConfig'),
+    ]);
+    if (woRes.success)   workOrders  = woRes.data   || [];
+    if (techRes.success) technicians = techRes.data  || [];
+    if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || 1;
+    if (!woRes.success || !techRes.success) {
+      toast('⚠️ โหลดข้อมูลบางส่วนไม่สำเร็จ — ลองรีเฟรชหน้า', 'error');
+    }
+  } catch(err) {
+    toast('❌ เชื่อมต่อ Server ไม่ได้ — กรุณาตรวจสอบ GS_API_URL', 'error');
+  } finally {
+    apiEnd();
+  }
+
   setDate();
   updateWONumber();
   updateDashboard();
   renderWOList();
+  renderTechList();
   renderDailyPlan();
   addForkliftRow(); // init with 1 row
 
@@ -1673,6 +1709,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
 });
+
+async function refreshData() {
+  apiStart();
+  try {
+    const [woRes, techRes, cfgRes] = await Promise.all([
+      gsApi.get('listWorkOrders'),
+      gsApi.get('listTechnicians'),
+      gsApi.get('getConfig'),
+    ]);
+    if (woRes.success)   workOrders  = woRes.data   || [];
+    if (techRes.success) technicians = techRes.data  || [];
+    if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || woCounter;
+    updateWONumber();
+    updateDashboard();
+    renderWOList();
+    renderTechList();
+    renderDailyPlan();
+    toast('✅ โหลดข้อมูลล่าสุดแล้ว', 'success');
+  } catch(err) {
+    toast('❌ โหลดข้อมูลไม่สำเร็จ', 'error');
+  } finally {
+    apiEnd();
+  }
+}
 
 function setDate() {
   const now = new Date();
@@ -1843,9 +1903,21 @@ function saveWorkOrder() {
 
   workOrders.unshift(wo);
   woCounter++;
-  localStorage.setItem('workOrders', JSON.stringify(workOrders));
-  localStorage.setItem('woCounter', woCounter);
   updateDashboard();
+  apiStart();
+  gsApi.post('createWorkOrder', { wo }).then(res => {
+    if (!res.success) {
+      workOrders.shift(); woCounter--;
+      toast('❌ บันทึกไม่สำเร็จ: ' + (res.error || ''), 'error');
+      updateDashboard();
+    } else if (res.data?.woCounter) {
+      woCounter = res.data.woCounter;
+    }
+  }).catch(() => {
+    workOrders.shift(); woCounter--;
+    toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
+    updateDashboard();
+  }).finally(() => apiEnd());
   return wo;
 }
 
@@ -2538,12 +2610,26 @@ function deleteWO() {
   const wo = workOrders.find(w => w.id === editingWOId);
   if (!wo) return;
   if (!confirm(`ยืนยันลบใบสั่งงาน ${wo.no} (${wo.company}) ?\n\nการลบไม่สามารถกู้คืนได้`)) return;
-  workOrders = workOrders.filter(w => w.id !== editingWOId);
-  localStorage.setItem('workOrders', JSON.stringify(workOrders));
+  const deletedId  = editingWOId;
+  const deletedIdx = workOrders.findIndex(w => w.id === deletedId);
+  const deletedWO  = { ...wo };
+  workOrders = workOrders.filter(w => w.id !== deletedId);
   toast(`🗑️ ลบใบสั่งงาน ${wo.no} แล้ว`, 'error');
   closeEditModal();
   renderWOList();
   updateDashboard();
+  apiStart();
+  gsApi.post('deleteWorkOrder', { id: deletedId }).then(res => {
+    if (!res.success) {
+      workOrders.splice(deletedIdx, 0, deletedWO);
+      toast('❌ ลบไม่สำเร็จ: ' + (res.error || ''), 'error');
+      renderWOList(); updateDashboard();
+    }
+  }).catch(() => {
+    workOrders.splice(deletedIdx, 0, deletedWO);
+    toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
+    renderWOList(); updateDashboard();
+  }).finally(() => apiEnd());
 }
 
 function saveEdit() {
@@ -2592,17 +2678,23 @@ function saveEdit() {
     updatedAt: new Date().toISOString(),
   });
 
-  localStorage.setItem('workOrders', JSON.stringify(workOrders));
-
   // อัปเดต currentViewWO ให้ชี้ไปที่ข้อมูลล่าสุด
   if (currentViewWO && currentViewWO.id === editingWOId) {
     currentViewWO = workOrders[idx];
   }
 
-  toast(`✅ บันทึกการแก้ไข ${workOrders[idx].no} เรียบร้อย`, 'success');
+  const savedNo     = workOrders[idx].no;
+  const savedId     = editingWOId;
+  const savedFields = { ...workOrders[idx] };
+  toast(`✅ บันทึกการแก้ไข ${savedNo} เรียบร้อย`, 'success');
   closeEditModal();
   renderWOList();
   updateDashboard();
+  apiStart();
+  gsApi.post('updateWorkOrder', { id: savedId, fields: savedFields }).then(res => {
+    if (!res.success) toast('❌ บันทึกแก้ไขไม่สำเร็จ: ' + (res.error || ''), 'error');
+  }).catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
+    .finally(() => apiEnd());
 }
 
 // ============================
@@ -2741,13 +2833,28 @@ function changeStatus() {
   }
   const idx = workOrders.findIndex(w => w.id === currentViewWO.id);
   if (idx !== -1) {
+    const prevStatus = workOrders[idx].status;
     workOrders[idx].status = newStatus;
     currentViewWO = workOrders[idx];
-    localStorage.setItem('workOrders', JSON.stringify(workOrders));
     toast(`🔄 เปลี่ยนสถานะเป็น "${newStatus}"`, 'success');
     closeModal();
     renderWOList();
     updateDashboard();
+    const changedId = workOrders[idx].id;
+    apiStart();
+    gsApi.post('updateWorkOrder', { id: changedId, fields: { status: newStatus } }).then(res => {
+      if (!res.success) {
+        const i = workOrders.findIndex(w => w.id === changedId);
+        if (i !== -1) workOrders[i].status = prevStatus;
+        toast('❌ เปลี่ยนสถานะไม่สำเร็จ: ' + (res.error || ''), 'error');
+        renderWOList(); updateDashboard();
+      }
+    }).catch(() => {
+      const i = workOrders.findIndex(w => w.id === changedId);
+      if (i !== -1) workOrders[i].status = prevStatus;
+      toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
+      renderWOList(); updateDashboard();
+    }).finally(() => apiEnd());
   }
 }
 
@@ -2865,12 +2972,18 @@ function saveLaborCost() {
       laborSavedAt:  new Date().toISOString(),
     });
     currentViewWO = workOrders[idx];
-    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    const laborId     = workOrders[idx].id;
+    const laborFields = { ...workOrders[idx] };
     toast(`✅ บันทึกค่าแรง ${totalCost.toLocaleString()} บาท เรียบร้อย`, 'success');
     document.getElementById('labor-modal').classList.remove('open');
     closeModal();
     renderWOList();
     updateDashboard();
+    apiStart();
+    gsApi.post('updateWorkOrder', { id: laborId, fields: laborFields })
+      .then(res => { if (!res.success) toast('❌ บันทึกค่าแรงไม่สำเร็จ: ' + (res.error || ''), 'error'); })
+      .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
+      .finally(() => apiEnd());
   }
 }
 
@@ -2880,12 +2993,17 @@ function saveLaborSkip() {
   if (idx !== -1) {
     workOrders[idx].status = 'เสร็จแล้ว';
     currentViewWO = workOrders[idx];
-    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    const skipId = workOrders[idx].id;
     toast('✅ บันทึกสถานะเสร็จแล้ว', 'success');
     document.getElementById('labor-modal').classList.remove('open');
     closeModal();
     renderWOList();
     updateDashboard();
+    apiStart();
+    gsApi.post('updateWorkOrder', { id: skipId, fields: { status: 'เสร็จแล้ว' } })
+      .then(res => { if (!res.success) toast('❌ บันทึกสถานะไม่สำเร็จ: ' + (res.error || ''), 'error'); })
+      .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
+      .finally(() => apiEnd());
   }
 }
 
@@ -3205,12 +3323,18 @@ function saveReschedule() {
   if (newTime) wo.apptTime = newTime + ' น.';
   wo.updatedAt = new Date().toISOString();
 
-  localStorage.setItem('workOrders', JSON.stringify(workOrders));
+  const rschId     = wo.id;
+  const rschFields = { ...wo };
   toast(`📅 ย้ายวันนัด ${wo.no} → ${formatDate(newDate)} เรียบร้อย`, 'success');
   closeRescheduleModal();
   renderDailyPlan();
   renderWOList();
   updateDashboard();
+  apiStart();
+  gsApi.post('updateWorkOrder', { id: rschId, fields: rschFields })
+    .then(res => { if (!res.success) toast('❌ บันทึกย้ายวันไม่สำเร็จ: ' + (res.error || ''), 'error'); })
+    .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
+    .finally(() => apiEnd());
 }
 
 // ============================
@@ -3701,7 +3825,7 @@ function toast(msg, type='') {
 // ============================
 // TECHNICIAN MANAGEMENT
 // ============================
-let technicians = JSON.parse(localStorage.getItem('technicians') || '[]');
+
 
 function openEditTechPicker() {
   // Re-use tech-picker-modal but set mode to 'edit'
@@ -3754,8 +3878,14 @@ function confirmTechPicker() {
   closeTechPickerModal();
 } // array of names selected in picker
 
-function saveTechniciansList() {
-  localStorage.setItem('technicians', JSON.stringify(technicians));
+function saveTechniciansList(action, payload) {
+  // action: 'createTechnician' | 'updateTechnician' | 'deleteTechnician'
+  if (!action) return;
+  apiStart();
+  gsApi.post(action, payload)
+    .then(res => { if (!res.success) toast('❌ บันทึกข้อมูลช่างไม่สำเร็จ: ' + (res.error || ''), 'error'); })
+    .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
+    .finally(() => apiEnd());
 }
 
 function renderTechList() {
@@ -3811,11 +3941,13 @@ function saveTechnician() {
     const idx = technicians.findIndex(x => x.id === editingTechId);
     if (idx > -1) Object.assign(technicians[idx], { name, nick, phone });
     toast('✅ อัปเดตข้อมูลช่างแล้ว', 'success');
+    saveTechniciansList('updateTechnician', { id: editingTechId, fields: { name, nick, phone } });
   } else {
-    technicians.push({ id: 'tech_' + Date.now(), name, nick, phone });
+    const newTech = { id: 'tech_' + Date.now(), name, nick, phone };
+    technicians.push(newTech);
     toast('✅ เพิ่มช่างแล้ว', 'success');
+    saveTechniciansList('createTechnician', { tech: newTech });
   }
-  saveTechniciansList();
   closeTechManageModal();
   renderTechList();
 }
@@ -3824,10 +3956,13 @@ function deleteTechnician(id) {
   const t = technicians.find(x => x.id === id);
   if (!t) return;
   if (!confirm(`ลบ "${t.name}" ออกจากทะเบียนช่าง?`)) return;
+  const deletedTech    = { ...t };
+  const deletedTechIdx = technicians.findIndex(x => x.id === id);
   technicians = technicians.filter(x => x.id !== id);
-  saveTechniciansList();
   renderTechList();
   toast(`🗑️ ลบ ${t.name} แล้ว`, 'error');
+  saveTechniciansList('deleteTechnician', { id });
+
 }
 
 // ============================
