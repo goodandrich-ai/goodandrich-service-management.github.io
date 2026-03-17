@@ -1629,7 +1629,7 @@ body {
 // GOOGLE SHEETS API
 // ============================
 // TODO: แทนที่ DEPLOYMENT_ID ด้วย Web App deployment ID จาก Apps Script
-const GS_API_URL = 'https://script.google.com/macros/s/AKfycbwwR8tSqNl7mQZjhj_zq4zuNhoPGE-OGoH_Mc-HT1DMw5xG8VW1iYlADPB7bNbbGreL/exec';
+const GS_API_URL = 'https://script.google.com/macros/s/AKfycbw4raXWANu5adVVIe9eCh_qO4iQAvUUV4RJ1tUeEkAFMqyBfROP2NFYedUVhvugyMw-/exec';
 
 const gsApi = {
   async get(action, params = {}) {
@@ -3098,20 +3098,32 @@ const JT_ORDER = { repair:1, rental:2, newcar:3, other:4 };
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
+function _parseDateParts(d) {
+  // Handles YYYY-MM-DD and Date.toString() from Apps Script (e.g. "Wed Mar 18 2026 00:00:00 GMT+0700")
+  if (!d) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+    const p = d.split('-');
+    return { y: parseInt(p[0]), m: parseInt(p[1]), day: parseInt(p[2]) };
+  }
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return { y: dt.getFullYear(), m: dt.getMonth() + 1, day: dt.getDate() };
+}
+
 function formatDate(d) {
-  if (!d) return '-';
-  const [y,m,day] = d.split('-');
+  const p = _parseDateParts(d);
+  if (!p) return '-';
   const months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${parseInt(day)} ${months[parseInt(m)]} ${parseInt(y)+543}`;
+  return `${p.day} ${months[p.m]} ${p.y+543}`;
 }
 
 function formatDateLong(d) {
-  if (!d) return '-';
-  const [y,m,day] = d.split('-');
+  const p = _parseDateParts(d);
+  if (!p) return '-';
   const months = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-  const dow = new Date(d).getDay();
-  return `วัน${days[dow]}ที่ ${parseInt(day)} ${months[parseInt(m)]} พ.ศ. ${parseInt(y)+543}`;
+  const dow = new Date(p.y, p.m - 1, p.day).getDay();
+  return `วัน${days[dow]}ที่ ${p.day} ${months[p.m]} พ.ศ. ${p.y+543}`;
 }
 
 function switchPlanTab(tab) {
