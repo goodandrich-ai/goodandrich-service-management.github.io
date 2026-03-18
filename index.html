@@ -1677,7 +1677,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       gsApi.get('listTechnicians'),
       gsApi.get('getConfig'),
     ]);
-    if (woRes.success)   workOrders  = woRes.data   || [];
+    if (woRes.success)   workOrders  = (woRes.data || []).map(wo => ({ ...wo, date: normalizeDate(wo.date), dueDate: normalizeDate(wo.dueDate) }));
     if (techRes.success) technicians = techRes.data  || [];
     if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || 1;
     if (!woRes.success || !techRes.success) {
@@ -1718,7 +1718,7 @@ async function refreshData() {
       gsApi.get('listTechnicians'),
       gsApi.get('getConfig'),
     ]);
-    if (woRes.success)   workOrders  = woRes.data   || [];
+    if (woRes.success)   workOrders  = (woRes.data || []).map(wo => ({ ...wo, date: normalizeDate(wo.date), dueDate: normalizeDate(wo.dueDate) }));
     if (techRes.success) technicians = techRes.data  || [];
     if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || woCounter;
     updateWONumber();
@@ -3097,6 +3097,15 @@ const JT_COLOR = {
 const JT_ORDER = { repair:1, rental:2, newcar:3, other:4 };
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
+
+// Normalize any date format to YYYY-MM-DD (handles Google Sheets "Wed Mar 18 2026..." format)
+function normalizeDate(d) {
+  if (!d) return d;
+  if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d;
+  const p = _parseDateParts(d);
+  if (!p) return d;
+  return `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
+}
 
 function _parseDateParts(d) {
   // Handles YYYY-MM-DD and Date.toString() from Apps Script (e.g. "Wed Mar 18 2026 00:00:00 GMT+0700")
