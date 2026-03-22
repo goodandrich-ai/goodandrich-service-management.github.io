@@ -1629,7 +1629,7 @@ body {
 // GOOGLE SHEETS API
 // ============================
 // TODO: แทนที่ DEPLOYMENT_ID ด้วย Web App deployment ID จาก Apps Script
-const GS_API_URL = 'https://script.google.com/macros/s/AKfycbwwR8tSqNl7mQZjhj_zq4zuNhoPGE-OGoH_Mc-HT1DMw5xG8VW1iYlADPB7bNbbGreL/exec';
+const GS_API_URL = 'https://script.google.com/macros/s/AKfycbw7-HF4Qqn7aONpk2VnjaVYlenSt4wAXsPyReFToBqs5iwBMKA5NhFDISazZxEMGbda/exec';
 
 const gsApi = {
   async get(action, params = {}) {
@@ -1911,7 +1911,16 @@ function saveWorkOrder() {
       toast('❌ บันทึกไม่สำเร็จ: ' + (res.error || ''), 'error');
       updateDashboard();
     } else if (res.data?.woCounter) {
-      woCounter = res.data.woCounter;
+      // Use Math.max so counter never resets backwards (prevents race condition when creating WOs rapidly)
+      woCounter = Math.max(woCounter, res.data.woCounter);
+      // Sync server-assigned id/no back to the local WO (server is authoritative)
+      if (res.data.id) {
+        const localIdx = workOrders.findIndex(w => w.id === wo.id);
+        if (localIdx !== -1) {
+          workOrders[localIdx].id = res.data.id;
+          workOrders[localIdx].no = res.data.no;
+        }
+      }
     }
   }).catch(() => {
     workOrders.shift(); woCounter--;
