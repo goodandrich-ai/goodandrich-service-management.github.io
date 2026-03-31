@@ -344,22 +344,6 @@ body {
 /* Job type section */
 .job-types { display: flex; gap: 12px; flex-wrap: wrap; }
 
-.subtype-group {
-  background: #F8FAFC;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 8px;
-}
-
-.subtype-group {
-  background: #F8FAFC;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 6px;
-}
-
 .job-type-card {
   flex: 1;
   min-width: 150px;
@@ -384,7 +368,6 @@ body {
 .job-type-card[id="jt-repair"].selected   { border-color: #DC2626; background: #FEF2F2; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
 .job-type-card[id="jt-rental"].selected   { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
 .job-type-card[id="jt-newcar"].selected   { border-color: #059669; background: #ECFDF5; box-shadow: 0 0 0 3px rgba(5,150,105,0.15); }
-.job-type-card[id="jt-other"].selected    { border-color: #CA8A04; background: #FEFCE8; box-shadow: 0 0 0 3px rgba(202,138,4,0.15); }
 
 .job-type-card input { display: none; }
 .job-type-icon { font-size: 28px; margin-bottom: 8px; display: block; transition: transform 0.2s; }
@@ -404,7 +387,6 @@ body {
 .job-type-card[id="jt-repair"].selected::after  { background: #DC2626; border-color: #DC2626; content: '✓'; color: white; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 .job-type-card[id="jt-rental"].selected::after  { background: #2563EB; border-color: #2563EB; content: '✓'; color: white; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 .job-type-card[id="jt-newcar"].selected::after  { background: #059669; border-color: #059669; content: '✓'; color: white; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-.job-type-card[id="jt-other"].selected::after   { background: #CA8A04; border-color: #CA8A04; content: '✓'; color: white; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 
 .job-type-sub {
   font-size: 11px;
@@ -553,7 +535,6 @@ body {
 .jt-filter-btn.repair.active { background: #DC2626; border-color: #DC2626; color: white; }
 .jt-filter-btn.rental.active { background: #2563EB; border-color: #2563EB; color: white; }
 .jt-filter-btn.newcar.active { background: #059669; border-color: #059669; color: white; }
-.jt-filter-btn.other.active  { background: #CA8A04; border-color: #CA8A04; color: white; }
 
 /* ===== WORK ORDER LIST ===== */
 .list-toolbar {
@@ -715,54 +696,29 @@ body {
 
 /* ===== PRINT STYLES — A5 ONE PAGE ===== */
 #print-sheet {
-  /* ซ่อนแต่ยัง layout อยู่ เพื่อให้วัด offsetHeight ได้ */
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
-  visibility: hidden;
-  pointer-events: none;
-  z-index: -1;
+  display: none;
 }
 
 @media print {
+  @page {
+    size: A5 portrait;
+    margin: 6mm 8mm;
+  }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-  /* ซ่อนทุกอย่าง */
   body > * { display: none !important; }
 
-  /* === A5 portrait — ใบสั่งงานเดี่ยว === */
-  body:not(.print-list-mode) #print-sheet {
+  #print-sheet {
     display: block !important;
     position: fixed !important;
-    visibility: visible !important;
-    top: 0 !important; left: 0 !important;
+    top: 0; left: 0;
     width: 100% !important;
-    height: 100% !important;
-    overflow: visible !important;
-    z-index: 9999 !important;
+    overflow: hidden !important;
   }
-  body:not(.print-list-mode) #ps-scaler {
-    -webkit-font-smoothing: subpixel-antialiased !important;
-    text-rendering: optimizeLegibility !important;
+
+  #ps-scaler {
     transform-origin: top left !important;
   }
-
-  /* === A4 landscape — ตารางรายการ === */
-  body.print-list-mode #print-list-sheet {
-    display: block !important;
-    position: static !important;
-    visibility: visible !important;
-  }
-}
-
-@page {
-  size: A5 portrait;
-  margin: 3mm 4mm;
-}
-
-/* Print list sheet (hidden normally) */
-#print-list-sheet {
-  display: none;
 }
 
 /* ===== FORKLIFT ROWS ===== */
@@ -814,6 +770,19 @@ body {
 }
 .forklift-row .remove-btn:hover { background: var(--danger); color: white; }
 
+/* ===== SYNC INDICATOR ===== */
+#sync-indicator {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+#sync-indicator.syncing { background: #EFF6FF; color: #1D4ED8; }
+#sync-indicator.offline { background: #FEF2F2; color: #DC2626; }
+#sync-indicator.synced  { background: #F0FDF4; color: #15803D; }
+#sync-indicator.hidden  { opacity: 0; pointer-events: none; }
+
 </style>
 </head>
 <body>
@@ -843,10 +812,6 @@ body {
     <div class="nav-item" onclick="showPage('daily-plan')">
       <span class="icon">📅</span> แพลนงานประจำวัน
     </div>
-    <div class="nav-section">ตั้งค่า</div>
-    <div class="nav-item" onclick="showPage('tech-manage')">
-      <span class="icon">👷</span> จัดการทะเบียนช่าง
-    </div>
   </div>
   <div class="sidebar-footer">
     🔧 Forklift Service System v1.0
@@ -859,7 +824,8 @@ body {
     <h1 id="page-title">ภาพรวม</h1>
     <div class="topbar-actions">
       <span style="font-size:13px;color:var(--muted)" id="current-date"></span>
-      <button class="btn btn-primary" id="btn-new-wo" onclick="showPage('create-wo')">+ ใบสั่งงานใหม่</button>
+      <span id="sync-indicator" class="hidden"></span>
+      <button class="btn btn-primary" onclick="showPage('create-wo')">+ ใบสั่งงานใหม่</button>
     </div>
   </div>
 
@@ -927,16 +893,18 @@ body {
               <p>Good & Rich Powerplus Co., Ltd.</p>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-            <div style="background:white;border:2px solid var(--accent);border-radius:10px;padding:6px 14px;display:flex;align-items:center;gap:8px;min-width:220px;">
-              <span style="font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;">👤 เซลล์ผู้รับผิดชอบ</span>
-              <input type="text" id="f-sales" placeholder="ชื่อเซลล์..."
-                style="border:none;outline:none;font-size:14px;font-weight:700;color:var(--primary);width:140px;background:transparent;" autocomplete="off">
-            </div>
-          </div>
           <div class="wo-number" id="wo-number-display">WO-000001</div>
         </div>
         <div class="form-body">
+
+          <!-- Draft restore banner -->
+          <div id="draft-restore-banner" style="display:none;background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:8px;padding:10px 16px;margin-bottom:16px;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:14px;">📝 <strong>มีข้อมูลที่กรอกค้างไว้</strong> — คืนค่าหรือละทิ้ง?</span>
+            <div style="display:flex;gap:8px;margin-left:auto;">
+              <button class="btn btn-primary btn-sm" onclick="restoreDraft()">คืนค่า</button>
+              <button class="btn btn-outline btn-sm" onclick="discardDraft()">ละทิ้ง</button>
+            </div>
+          </div>
 
           <!-- Section 1: Job Type -->
           <div class="section-block">
@@ -959,53 +927,10 @@ body {
                 </label>
                 <label class="job-type-card" id="jt-newcar">
                   <input type="radio" name="job_type" value="newcar" onchange="toggleJobType(this,'jt-newcar')">
-                  <span class="job-type-icon">💰</span>
-                  <span class="job-type-label" style="color:#059669;">งานขาย</span>
-                  <span class="job-type-sub">Sales</span>
+                  <span class="job-type-icon">✨</span>
+                  <span class="job-type-label" style="color:#059669;">งานรถใหม่</span>
+                  <span class="job-type-sub">New Unit</span>
                 </label>
-                <label class="job-type-card" id="jt-other">
-                  <input type="radio" name="job_type" value="other" onchange="toggleJobType(this,'jt-other')">
-                  <span class="job-type-icon">📦</span>
-                  <span class="job-type-label" style="color:#854D0E;">งานอื่นๆ</span>
-                  <span class="job-type-sub">Other</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Sub-type per job type -->
-            <div id="subtype-repair" class="subtype-group" style="display:none;">
-              <div class="form-label" style="margin-bottom:8px;font-weight:700;">ประเภทงานซ่อม (เลือกได้หลายรายการ)</div>
-              <div class="check-group">
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="PM ลูกค้าประจำเดือน"> PM ลูกค้าประจำเดือน</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ตรวจเช็ค"> ตรวจเช็ค</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ถอด-ประกอบอะไหล่"> ถอด-ประกอบอะไหล่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ซื้อ-รับอะไหล่"> ซื้อ-รับอะไหล่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ยกรถกลับมาซ่อม-ส่งคืนรถซ่อม"> ยกรถกลับมาซ่อม / ส่งคืนรถซ่อม</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="เซ็นบิล+วางบิล"> เซ็นบิล + วางบิล</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="งานเคลม/แก้ไขลูกค้าซ่อม"> งานเคลม / แก้ไขลูกค้าซ่อม</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="งานในบริษัท"> งานในบริษัท</label>
-              </div>
-            </div>
-            <div id="subtype-rental" class="subtype-group" style="display:none;">
-              <div class="form-label" style="margin-bottom:8px;font-weight:700;">ประเภทงานรถเช่า (เลือกได้หลายรายการ)</div>
-              <div class="check-group">
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ตรวจเช็ค"> ตรวจเช็ค</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ซ่อม-ประกอบอะไหล่"> ซ่อม-ประกอบอะไหล่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="เซอร์วิสประจำเดือนรถเช่า"> เซอร์วิสประจำเดือนรถเช่า</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ซื้อ-รับอะไหล่"> ซื้อ-รับอะไหล่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="เซ็นบิล+วางบิล"> เซ็นบิล + วางบิล</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="งานในบริษัท"> งานในบริษัท</label>
-              </div>
-            </div>
-            <div id="subtype-newcar" class="subtype-group" style="display:none;">
-              <div class="form-label" style="margin-bottom:8px;font-weight:700;">ประเภทงานขาย (เลือกได้หลายรายการ)</div>
-              <div class="check-group">
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ส่ง-รับรถใหม่"> ส่ง-รับรถใหม่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="ตรวจเช็ค"> ตรวจเช็ค</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="เซอร์วิสรถใหม่"> เซอร์วิสรถใหม่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="งานเคลมรถใหม่"> งานเคลมรถใหม่</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="เซ็นบิล+วางบิล+รับเช็ค"> เซ็นบิล + วางบิล + รับเช็ค</label>
-                <label class="check-item"><input type="checkbox" name="f-subtype" value="งานในบริษัท"> งานในบริษัท</label>
               </div>
             </div>
           </div>
@@ -1013,10 +938,14 @@ body {
           <!-- Section 2: Customer Info -->
           <div class="section-block">
             <div class="section-title">
-              <span class="s-num">2</span> ข้อมูลลูกค้า
+              <span class="s-num">2</span> ข้อมูลลูกค้า / เซลล์ผู้รับผิดชอบ
             </div>
             <div class="section-content">
               <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label required">ชื่อเซลล์ผู้รับผิดชอบ</label>
+                  <input type="text" class="form-input" id="f-sales" placeholder="ชื่อ-นามสกุล">
+                </div>
                 <div class="form-group col-span-2">
                   <label class="form-label required">บริษัทลูกค้า</label>
                   <input type="text" class="form-input" id="f-company" placeholder="ชื่อบริษัท / ร้านค้า">
@@ -1080,7 +1009,6 @@ body {
                   <select class="form-select" id="f-brand">
                     <option value="">-- เลือก --</option>
                     <option>HELI</option>
-                    <option>Hangcha</option>
                     <option>Toyota</option>
                     <option>Komatsu</option>
                     <option>Nissan</option>
@@ -1145,7 +1073,6 @@ body {
                 <label class="check-item"><input type="radio" name="payment" value="transfer"> 📱 ลูกค้าโอน</label>
                 <label class="check-item"><input type="radio" name="payment" value="prepaid"> ✅ ลูกค้าชำระล่วงหน้าแล้ว</label>
                 <label class="check-item"><input type="radio" name="payment" value="credit"> 📆 เครดิต</label>
-                <label class="check-item"><input type="radio" name="payment" value="cheque"> 🧾 รับเช็ค</label>
               </div>
               <div id="credit-detail" style="display:none;margin-top:12px;">
                 <div class="form-grid-2">
@@ -1176,7 +1103,6 @@ body {
                 <label class="check-item"><input type="checkbox" name="doc" value="invoice"> 📄 วางบิล</label>
                 <label class="check-item"><input type="checkbox" name="doc" value="receipt"> 🧾 ใบเสร็จรับเงิน</label>
                 <label class="check-item"><input type="checkbox" name="doc" value="quotation"> 📋 ใบเสนอราคา</label>
-                <label class="check-item"><input type="checkbox" name="doc" value="contract"> 📝 เซ็นสัญญา</label>
               </div>
             </div>
           </div>
@@ -1187,24 +1113,18 @@ body {
               <span class="s-num">7</span> ช่างผู้ปฏิบัติงาน
             </div>
             <div class="section-content">
-              <div class="form-group" style="margin-bottom:12px;">
-                <label class="form-label">เลือกช่างผู้ไปปฏิบัติงาน <span style="color:var(--muted);font-weight:400;">(เลือกได้หลายคน)</span></label>
-                <div id="tech-picker" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;min-height:44px;background:white;cursor:pointer;" onclick="openTechPicker()">
-                  <span id="tech-picker-placeholder" style="color:var(--muted);font-size:13px;">คลิกเพื่อเลือกช่าง...</span>
-                </div>
-                <input type="hidden" id="f-tech">
-              </div>
               <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">ชื่อช่างผู้ไปปฏิบัติงาน</label>
+                  <input type="text" class="form-input" id="f-tech" placeholder="พิมพ์ชื่อช่าง (เว้นไว้กรอกภายหลังได้)">
+                </div>
                 <div class="form-group">
                   <label class="form-label">วันที่นัดหมาย / เข้างาน</label>
                   <input type="date" class="form-input" id="f-date">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">ระยะเวลาในการทำงาน (ชั่วโมง)</label>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <input type="number" class="form-input" id="f-work-hours" min="0.5" max="24" step="0.5" placeholder="เช่น 2.5" style="width:120px;">
-                    <span style="font-size:13px;color:var(--muted);white-space:nowrap;">ชั่วโมง</span>
-                  </div>
+                  <label class="form-label">เวลานัด</label>
+                  <input type="time" class="form-input" id="f-time">
                 </div>
                 <div class="form-group">
                   <label class="form-label">ลายเซ็นลูกค้า (ชื่อ)</label>
@@ -1241,7 +1161,7 @@ body {
       <!-- Search bar row -->
       <div class="list-toolbar">
         <div class="search-box" style="max-width:280px;">
-          <input type="text" id="search-company" placeholder="🔍 ค้นหา บริษัท / เลขที่ WO / เซลล์ / ช่าง..." oninput="applyFilters()">
+          <input type="text" id="search-company" placeholder="🔍 ค้นหาชื่อบริษัทลูกค้า..." oninput="applyFilters()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;">
           <span style="font-size:12px;color:var(--muted);white-space:nowrap;">📅 วันที่</span>
@@ -1257,7 +1177,12 @@ body {
           <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
           <option value="เสร็จแล้ว">เสร็จแล้ว</option>
         </select>
-        <button class="btn btn-outline btn-sm" onclick="refreshData()" title="โหลดข้อมูลล่าสุดจาก Server" style="white-space:nowrap;">🔄 รีเฟรช</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="toggle-archived" onchange="applyFilters()"> 📦 Archive
+        </label>
+        <button class="btn btn-outline btn-sm" onclick="exportData()" title="Export ข้อมูลทั้งหมดเป็น JSON (สำรองข้ามบราวเซอร์)">📤</button>
+        <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file-input').click()" title="Import ข้อมูลจาก JSON">📥</button>
         <button class="btn btn-primary" onclick="showPage('create-wo')">+ ใบสั่งงานใหม่</button>
       </div>
 
@@ -1267,21 +1192,18 @@ body {
       <div class="wo-table">
         <table>
           <thead><tr>
-            <th style="width:42px;text-align:center;">#</th>
+            <th>เลขที่ WO</th>
             <th>วันที่นัด</th>
             <th>บริษัทลูกค้า</th>
-            <th>เซลล์</th>
             <th>ช่าง</th>
             <th>ประเภทงาน</th>
             <th>รายละเอียดงาน</th>
-            <th>โลเคชั่น</th>
-            <th>หมายเหตุ</th>
-            <th>เลขที่ WO</th>
+            <th>การชำระ</th>
             <th>สถานะ</th>
             <th>จัดการ</th>
           </tr></thead>
           <tbody id="wo-list-body">
-            <tr><td colspan="12" style="text-align:center;padding:32px;color:var(--muted)">ยังไม่มีใบสั่งงาน</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">ยังไม่มีใบสั่งงาน</td></tr>
           </tbody>
         </table>
       </div>
@@ -1327,8 +1249,7 @@ body {
           <button class="jt-filter-btn active" data-jt="" onclick="setJtFilter(this,'')">ทั้งหมด</button>
           <button class="jt-filter-btn repair" data-jt="repair" onclick="setJtFilter(this,'repair')">🔧 งานซ่อม</button>
           <button class="jt-filter-btn rental" data-jt="rental" onclick="setJtFilter(this,'rental')">🚜 งานรถเช่า</button>
-          <button class="jt-filter-btn newcar" data-jt="newcar" onclick="setJtFilter(this,'newcar')">💰 งานขาย</button>
-          <button class="jt-filter-btn other"  data-jt="other"  onclick="setJtFilter(this,'other')">📦 งานอื่นๆ</button>
+          <button class="jt-filter-btn newcar" data-jt="newcar" onclick="setJtFilter(this,'newcar')">✨ งานรถใหม่</button>
         </div>
 
         <!-- Summary bar -->
@@ -1372,71 +1293,7 @@ body {
   </div>
 </div>
 
-<!-- TECH MANAGE PAGE -->
-<div class="page" id="page-tech-manage">
-  <div class="card" style="max-width:700px;margin:0 auto;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <div style="font-size:18px;font-weight:800;">👷 ทะเบียนรายชื่อช่าง</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:2px;">เพิ่ม แก้ไข หรือลบรายชื่อช่างในระบบ</div>
-      </div>
-      <button class="btn btn-primary" onclick="openAddTechnicianModal()">+ เพิ่มช่าง</button>
-    </div>
-    <table class="table" style="width:100%;">
-      <thead><tr>
-        <th style="width:40px;text-align:center;">#</th>
-        <th>ชื่อช่าง</th>
-        <th>ชื่อเล่น / ตำแหน่ง</th>
-        <th>เบอร์โทร</th>
-        <th style="width:120px;text-align:center;">จัดการ</th>
-      </tr></thead>
-      <tbody id="tech-list-body">
-        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">ยังไม่มีรายชื่อช่าง</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- TECH MANAGE MODAL -->
-<div class="modal-overlay" id="tech-manage-modal">
-  <div class="modal" style="max-width:440px;">
-    <div class="modal-header">
-      <div style="font-weight:700;" id="tech-modal-title">เพิ่มช่าง</div>
-      <button class="modal-close" onclick="closeTechManageModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label class="form-label required">ชื่อ-นามสกุล</label><input type="text" class="form-input" id="tm-name" placeholder="เช่น สมชาย ใจดี"></div>
-      <div class="form-group"><label class="form-label">ชื่อเล่น / ตำแหน่ง</label><input type="text" class="form-input" id="tm-nick" placeholder="เช่น ช่างจอน, หัวหน้าช่าง"></div>
-      <div class="form-group"><label class="form-label">เบอร์โทร</label><input type="tel" class="form-input" id="tm-phone" placeholder="08x-xxx-xxxx"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeTechManageModal()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveTechnician()">💾 บันทึก</button>
-    </div>
-  </div>
-</div>
-
-<!-- TECH PICKER MODAL -->
-<div class="modal-overlay" id="tech-picker-modal" style="z-index:1100;">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <div style="font-weight:700;">👷 เลือกช่างผู้ปฏิบัติงาน</div>
-      <button class="modal-close" onclick="closeTechPickerModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">เลือกได้หลายคน</div>
-      <div id="tech-picker-list" style="display:grid;gap:8px;"></div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">หรือพิมพ์ชื่อช่างเพิ่มเติม (ถ้าไม่อยู่ในรายการ)</div>
-        <input type="text" class="form-input" id="tech-extra-input" placeholder="พิมพ์ชื่อแล้วกด Enter" onkeydown="if(event.key==='Enter')addExtraTech()">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeTechPickerModal()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="confirmTechPicker()">✅ ยืนยัน</button>
-    </div>
-  </div>
-</div>
+<!-- VIEW WO MODAL -->
 <div class="modal-overlay" id="view-modal">
   <div class="modal" style="max-width:700px;">
     <div class="modal-header">
@@ -1451,6 +1308,7 @@ body {
       <button class="btn btn-outline" onclick="closeModal()">ปิด</button>
       <button class="btn btn-outline" onclick="openEditModal(currentViewWO.id)">✏️ แก้ไข</button>
       <button class="btn btn-warning" onclick="openRescheduleModal(currentViewWO.id)" style="background:#F59E0B;color:white;border-color:#F59E0B;">📅 ย้ายวันนัด</button>
+      <button class="btn btn-secondary" onclick="changeStatus()">🔄 เปลี่ยนสถานะ</button>
       <button class="btn btn-primary" onclick="printWO()">🖨️ พิมพ์</button>
     </div>
   </div>
@@ -1469,8 +1327,6 @@ body {
     <div class="modal-body" id="edit-modal-body"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeEditModal()">ยกเลิก</button>
-      <button class="btn" style="background:#FEF3C7;color:#B45309;border:1.5px solid #FCD34D;font-weight:700;" onclick="const _id=editingWOId;closeEditModal();openRescheduleModal(_id)">📅 ย้ายวันนัด</button>
-      <button class="btn" style="background:#FEE2E2;color:#DC2626;border:1.5px solid #FCA5A5;font-weight:700;" onclick="deleteWO()">🗑️ ลบใบสั่งงาน</button>
       <button class="btn btn-primary" onclick="saveEdit()">💾 บันทึกการแก้ไข</button>
     </div>
   </div>
@@ -1495,62 +1351,7 @@ body {
 </div>
 
 <!-- RESCHEDULE MODAL -->
-<!-- LABOR COST MODAL -->
-<div class="modal-overlay" id="labor-modal" style="z-index:1100;">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-header" style="background:#10B981;">
-      <div>
-        <div style="font-weight:800;font-size:16px;">✅ บันทึกงานเสร็จสิ้น</div>
-        <div style="font-size:12px;opacity:.8;margin-top:2px;" id="labor-wo-sub">ลงเวลาทำงานและคำนวณค่าแรง</div>
-      </div>
-      <button class="modal-close" onclick="closeLaborModal()">✕</button>
-    </div>
-    <div class="modal-body">
-
-      <!-- ช่างที่ไปงาน -->
-      <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div style="font-size:12px;font-weight:700;color:#15803D;">👷 ช่างผู้ปฏิบัติงาน</div>
-          <button class="btn btn-sm" style="font-size:11px;background:#10B981;color:white;border:none;padding:3px 10px;" onclick="openLaborTechPicker()">+ เลือก / แก้ไขช่าง</button>
-        </div>
-        <div id="labor-techs-list" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
-      </div>
-
-      <!-- ระยะเวลา -->
-      <div class="form-group">
-        <label class="form-label required">ระยะเวลาทำงาน (ชั่วโมง)</label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="number" class="form-input" id="labor-hours" min="0.5" max="24" step="0.5" placeholder="เช่น 2.5" style="width:140px;" oninput="calcLaborCost()">
-          <span style="font-size:13px;color:var(--muted);">ชั่วโมง &nbsp;×&nbsp; 250 บ./ชม./คน</span>
-        </div>
-      </div>
-
-      <!-- สรุปค่าแรง -->
-      <div id="labor-summary" style="display:none;background:#ECFDF5;border:2px solid #10B981;border-radius:10px;padding:14px 16px;margin-top:4px;">
-        <div style="font-size:12px;color:#6B7280;margin-bottom:10px;font-weight:600;">สรุปค่าแรง</div>
-        <div id="labor-breakdown" style="font-size:13px;color:#374151;line-height:2;"></div>
-        <div style="border-top:1.5px dashed #86EFAC;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:14px;font-weight:700;color:#15803D;">รวมค่าแรงทั้งหมด</span>
-          <span id="labor-total" style="font-size:22px;font-weight:900;color:#10B981;font-family:monospace;"></span>
-        </div>
-      </div>
-
-      <!-- หมายเหตุเพิ่มเติม -->
-      <div class="form-group" style="margin-top:14px;">
-        <label class="form-label">หมายเหตุค่าแรง (ถ้ามี)</label>
-        <input type="text" class="form-input" id="labor-note" placeholder="เช่น รวมค่าเดินทาง, ต่อเวลา...">
-      </div>
-
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeLaborModal()">ยกเลิก</button>
-      <button class="btn btn-outline" onclick="saveLaborSkip()">บันทึกเสร็จแล้ว (ไม่ลงค่าแรง)</button>
-      <button class="btn btn-primary" style="background:#10B981;border-color:#10B981;" onclick="saveLaborCost()">💾 บันทึกค่าแรง</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="reschedule-modal" style="z-index:1100;">
+<div class="modal-overlay" id="reschedule-modal">
   <div class="modal" style="max-width:460px;">
     <div class="modal-header" style="background:linear-gradient(135deg,#B45309,#F59E0B);">
       <div>
@@ -1612,88 +1413,131 @@ body {
   </div>
 </div>
 
-<!-- PRINT LIST SHEET -->
-<div id="print-list-sheet"></div>
-
 <!-- PRINT SHEET — A5 one page -->
 <div id="print-sheet"></div>
-
-<!-- API LOADING BAR -->
-<div id="api-loading" style="position:fixed;top:0;left:0;height:3px;width:0;background:#FF6B35;z-index:9999;transition:width 0.3s ease,opacity 0.3s ease;pointer-events:none;"></div>
 
 <!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
 <script>
 // ============================
-// GOOGLE SHEETS API
+// CONFIG
 // ============================
-// TODO: แทนที่ DEPLOYMENT_ID ด้วย Web App deployment ID จาก Apps Script
-const GS_API_URL = 'https://script.google.com/macros/s/AKfycbw7-HF4Qqn7aONpk2VnjaVYlenSt4wAXsPyReFToBqs5iwBMKA5NhFDISazZxEMGbda/exec';
-
-const gsApi = {
-  async get(action, params = {}) {
-    const qs = new URLSearchParams({ action, ...params }).toString();
-    const res = await fetch(`${GS_API_URL}?${qs}`, { redirect: 'follow' });
-    return res.json();
-  },
-  async post(action, payload) {
-    const body = JSON.stringify({ action, ...payload });
-    const res  = await fetch(GS_API_URL, { method: 'POST', body, redirect: 'follow' });
-    return res.json();
-  }
-};
-
-function apiStart() {
-  const el = document.getElementById('api-loading');
-  if (el) el.style.width = '70%';
-}
-function apiEnd() {
-  const el = document.getElementById('api-loading');
-  if (el) { el.style.width = '100%'; setTimeout(() => { el.style.width = '0'; }, 300); }
-}
+const API_URL = 'https://script.google.com/macros/s/AKfycbwDmxItNrnN0u77bgNoVslExMblkKq4h9a0y5-F0AokeD1ASdB7OCM5D6s3NkXsS4ew/exec'; // ← วาง GAS Web App URL ที่นี่
+                    //   เช่น 'https://script.google.com/macros/s/AKfyc.../exec'
+                    //   ถ้าปล่อยว่าง = localStorage-only mode (offline fallback)
 
 // ============================
 // STATE
 // ============================
-let workOrders  = [];
-let technicians = [];
-let woCounter   = 1;
+let workOrders = JSON.parse(localStorage.getItem('workOrders') || '[]');
+let _isOfflineMode = !API_URL;
+let _isSyncing = false;
+let _pollingInterval = null;
 let currentPlanDate = new Date();
 let currentViewWO = null;
-let editingWOId = null;
-let editingTechId = null;
-let selectedTechs = [];
-let selectedEditTechs = [];
+let formEditingId = null; // ถ้ามีค่า = กำลัง edit WO เดิม ไม่ใช่สร้างใหม่
+
+// ============================
+// API HELPERS
+// ============================
+function setSyncIndicator(state, text) {
+  const el = document.getElementById('sync-indicator');
+  if (!el) return;
+  el.className = state; // syncing | synced | offline | hidden
+  el.textContent = text || '';
+}
+
+async function apiFetch(action) {
+  const url = API_URL + '?action=' + encodeURIComponent(action);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'API error');
+  return json.data;
+}
+
+async function apiPost(payload) {
+  // GAS requires Content-Type: text/plain to bypass CORS preflight
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'API error');
+  return json.data;
+}
+
+async function refreshWorkOrders() {
+  if (!API_URL || _isSyncing) return;
+  _isSyncing = true;
+  setSyncIndicator('syncing', 'กำลังซิงค์...');
+  try {
+    const data = await apiFetch('getWorkOrders');
+    workOrders = data;
+    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    _isOfflineMode = false;
+    setSyncIndicator('synced', '✓ ซิงค์แล้ว');
+    setTimeout(() => setSyncIndicator('hidden', ''), 2000);
+    updateDashboard();
+    renderWOList();
+    renderDailyPlan();
+  } catch (err) {
+    _isOfflineMode = true;
+    setSyncIndicator('offline', '● ออฟไลน์');
+    console.warn('refreshWorkOrders failed:', err);
+  } finally {
+    _isSyncing = false;
+  }
+}
+
+function startPolling() {
+  if (!API_URL) return;
+  _pollingInterval = setInterval(() => refreshWorkOrders(), 15000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshWorkOrders();
+  });
+}
 
 // ============================
 // INIT
 // ============================
 document.addEventListener('DOMContentLoaded', async () => {
-  apiStart();
-  try {
-    const [woRes, techRes, cfgRes] = await Promise.all([
-      gsApi.get('listWorkOrders'),
-      gsApi.get('listTechnicians'),
-      gsApi.get('getConfig'),
-    ]);
-    if (woRes.success)   workOrders  = (woRes.data || []).map(wo => ({ ...wo, date: normalizeDate(wo.date), dueDate: normalizeDate(wo.dueDate) }));
-    if (techRes.success) technicians = techRes.data  || [];
-    if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || 1;
-    if (!woRes.success || !techRes.success) {
-      toast('⚠️ โหลดข้อมูลบางส่วนไม่สำเร็จ — ลองรีเฟรชหน้า', 'error');
+  setDate();
+
+  // --- Migration: push existing localStorage data to API on first API load ---
+  if (API_URL) {
+    const localData = JSON.parse(localStorage.getItem('workOrders') || '[]');
+    if (localData.length > 0 && !localStorage.getItem('woMigrationDone')) {
+      setSyncIndicator('syncing', 'กำลังย้ายข้อมูล...');
+      let migratedCount = 0;
+      for (const wo of localData) {
+        try {
+          // Old IDs were numeric strings like '000001' — replace with collision-safe id
+          if (!wo.id || /^\d+$/.test(wo.id)) {
+            wo.id = generateWOId();
+          }
+          if (!wo.updatedAt) wo.updatedAt = wo.created || new Date().toISOString();
+          await apiPost({ action: 'saveWorkOrder', data: wo });
+          migratedCount++;
+        } catch (e) {
+          console.warn('Migration failed for WO:', wo.no, e);
+        }
+      }
+      localStorage.setItem('woMigrationDone', '1');
+      if (migratedCount > 0) {
+        toast('✅ ย้ายข้อมูล ' + migratedCount + ' รายการสู่ระบบกลางเรียบร้อย', 'success');
+      }
     }
-  } catch(err) {
-    toast('❌ เชื่อมต่อ Server ไม่ได้ — กรุณาตรวจสอบ GS_API_URL', 'error');
-  } finally {
-    apiEnd();
+    await refreshWorkOrders();
+    startPolling();
   }
 
-  setDate();
   updateWONumber();
   updateDashboard();
   renderWOList();
-  renderTechList();
   renderDailyPlan();
   addForkliftRow(); // init with 1 row
 
@@ -1708,31 +1552,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set today date on form
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
-});
 
-async function refreshData() {
-  apiStart();
-  try {
-    const [woRes, techRes, cfgRes] = await Promise.all([
-      gsApi.get('listWorkOrders'),
-      gsApi.get('listTechnicians'),
-      gsApi.get('getConfig'),
-    ]);
-    if (woRes.success)   workOrders  = (woRes.data || []).map(wo => ({ ...wo, date: normalizeDate(wo.date), dueDate: normalizeDate(wo.dueDate) }));
-    if (techRes.success) technicians = techRes.data  || [];
-    if (cfgRes.success)  woCounter   = cfgRes.data?.woCounter || woCounter;
-    updateWONumber();
-    updateDashboard();
-    renderWOList();
-    renderTechList();
-    renderDailyPlan();
-    toast('✅ โหลดข้อมูลล่าสุดแล้ว', 'success');
-  } catch(err) {
-    toast('❌ โหลดข้อมูลไม่สำเร็จ', 'error');
-  } finally {
-    apiEnd();
-  }
-}
+  // Auto-save draft เมื่อมีการพิมพ์ในฟอร์ม
+  document.querySelectorAll('#page-create-wo input, #page-create-wo textarea, #page-create-wo select').forEach(el => {
+    el.addEventListener('input', saveDraft);
+    el.addEventListener('change', saveDraft);
+  });
+});
 
 function setDate() {
   const now = new Date();
@@ -1749,8 +1575,7 @@ const pageTitles = {
   'dashboard': 'ภาพรวม',
   'create-wo': 'สร้างใบสั่งงานซ่อม',
   'wo-list': 'รายการใบสั่งงาน',
-  'daily-plan': 'แพลนงานประจำวัน',
-  'tech-manage': 'จัดการทะเบียนช่าง'
+  'daily-plan': 'แพลนงานประจำวัน'
 };
 
 function showPage(id) {
@@ -1758,24 +1583,36 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${id}`).classList.add('active');
   document.getElementById('page-title').textContent = pageTitles[id];
+  // Highlight nav
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick')?.includes(id)) n.classList.add('active');
   });
-  // ซ่อนปุ่ม + ใบสั่งงานใหม่ เฉพาะหน้า tech-manage
-  const newWOBtn = document.getElementById('btn-new-wo');
-  if (newWOBtn) newWOBtn.style.display = id === 'tech-manage' ? 'none' : '';
   if (id === 'wo-list') renderWOList();
   if (id === 'daily-plan') renderDailyPlan();
   if (id === 'dashboard') updateDashboard();
-  if (id === 'create-wo') updateWONumber();
-  if (id === 'tech-manage') renderTechList();
+  if (id === 'create-wo') { updateWONumber(); checkDraft(); }
 }
 
 // ============================
-// WORK ORDER NUMBER
+// WORK ORDER ID & NUMBER
 // ============================
+function generateWOId() {
+  // Collision-safe: timestamp base36 + random suffix
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function nextWODisplayNumber() {
+  // Derive next sequential display number from max existing WO-XXXXXX
+  let max = workOrders.length;
+  workOrders.forEach(w => {
+    const m = w.no && w.no.match(/WO-(\d+)/);
+    if (m) { const n = parseInt(m[1]); if (n > max) max = n; }
+  });
+  return max + 1;
+}
+
 function updateWONumber() {
-  const num = String(woCounter).padStart(6,'0');
+  const num = String(nextWODisplayNumber()).padStart(6,'0');
   document.getElementById('wo-number-display').textContent = `WO-${num}`;
 }
 
@@ -1829,11 +1666,9 @@ function clearForkliftRows() {
 
 
 function toggleJobType(el, cardId) {
+  // Radio — deselect all other cards first
   document.querySelectorAll('.job-type-card').forEach(c => c.classList.remove('selected'));
-  if (el.checked) {
-    document.getElementById(cardId).classList.add('selected');
-    toggleSubtype(el.value);
-  }
+  if (el.checked) document.getElementById(cardId).classList.add('selected');
 }
 
 function formatThaiTime(input) {
@@ -1860,20 +1695,16 @@ function getRadio(name) {
   return el ? el.value : '';
 }
 
-function saveWorkOrder() {
+async function saveWorkOrder() {
   const company = document.getElementById('f-company').value.trim();
   const detail = document.getElementById('f-detail').value.trim();
 
   if (!company) { toast('กรุณากรอกชื่อบริษัทลูกค้า', 'error'); return null; }
   if (!detail)  { toast('กรุณากรอกรายละเอียดงาน', 'error');  return null; }
 
-  const wo = {
-    id: String(woCounter).padStart(6,'0'),
-    no: `WO-${String(woCounter).padStart(6,'0')}`,
-    created: new Date().toISOString(),
+  const fields = {
     date: document.getElementById('f-date').value || new Date().toISOString().split('T')[0],
-    time: '',
-    status: 'รอดำเนินการ',
+    time: document.getElementById('f-time').value,
     jobType: getRadio('job_type'),
     sales: document.getElementById('f-sales').value.trim(),
     contactName: document.getElementById('f-contact-name').value.trim(),
@@ -1893,56 +1724,83 @@ function saveWorkOrder() {
     creditDays: document.getElementById('f-credit-days')?.value || '',
     dueDate: document.getElementById('f-due-date')?.value || '',
     docs: getChecked('doc'),
-    tech: selectedTechs.join(', '),
-    techs: [...selectedTechs],
-    workHours: parseFloat(document.getElementById('f-work-hours').value) || null,
-    subtype: getChecked('f-subtype'),
+    tech: document.getElementById('f-tech').value.trim(),
     cusSign: document.getElementById('f-cus-sign').value.trim(),
     remark: document.getElementById('f-remark').value.trim(),
   };
 
-  workOrders.unshift(wo);
-  woCounter++;
-  updateDashboard();
-  apiStart();
-  gsApi.post('createWorkOrder', { wo }).then(res => {
-    if (!res.success) {
-      workOrders.shift(); woCounter--;
-      toast('❌ บันทึกไม่สำเร็จ: ' + (res.error || ''), 'error');
-      updateDashboard();
-    } else if (res.data?.woCounter) {
-      // Use Math.max so counter never resets backwards (prevents race condition when creating WOs rapidly)
-      woCounter = Math.max(woCounter, res.data.woCounter);
-      // Sync server-assigned id/no back to the local WO (server is authoritative)
-      if (res.data.id) {
-        const localIdx = workOrders.findIndex(w => w.id === wo.id);
-        if (localIdx !== -1) {
-          workOrders[localIdx].id = res.data.id;
-          workOrders[localIdx].no = res.data.no;
+  // UPDATE existing WO
+  if (formEditingId) {
+    const idx = workOrders.findIndex(w => w.id === formEditingId);
+    if (idx === -1) {
+      toast('ไม่พบใบสั่งงาน กรุณา reload', 'error');
+      return null;
+    }
+    const localUpdatedAt = workOrders[idx].updatedAt;
+    const updated = Object.assign({}, workOrders[idx], fields, { updatedAt: new Date().toISOString() });
+
+    if (API_URL) {
+      try {
+        // Conflict detection: fetch fresh copy and compare updatedAt
+        const fresh = await apiFetch('getWorkOrders');
+        const freshRecord = fresh.find(w => w.id === formEditingId);
+        if (freshRecord && freshRecord.updatedAt && freshRecord.updatedAt !== localUpdatedAt) {
+          toast('⚠️ ข้อมูลถูกแก้ไขโดยคนอื่น กรุณา reload เพื่อดูข้อมูลล่าสุด', 'error');
         }
+        await apiPost({ action: 'saveWorkOrder', data: updated });
+      } catch (err) {
+        toast('⚠️ บันทึกบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error');
       }
     }
-  }).catch(() => {
-    workOrders.shift(); woCounter--;
-    toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
+    workOrders[idx] = updated;
+    localStorage.setItem('workOrders', JSON.stringify(workOrders));
     updateDashboard();
-  }).finally(() => apiEnd());
+    return workOrders[idx];
+  }
+
+  // CREATE new WO
+  const newId = generateWOId();
+  const dispNum = nextWODisplayNumber();
+  const wo = {
+    id: newId,
+    no: `WO-${String(dispNum).padStart(6,'0')}`,
+    created: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'รอดำเนินการ',
+    archived: false,
+    ...fields,
+  };
+
+  if (API_URL) {
+    try {
+      const result = await apiPost({ action: 'saveWorkOrder', data: wo });
+      if (result && result.id) wo.id = result.id;
+      if (result && result.updatedAt) wo.updatedAt = result.updatedAt;
+    } catch (err) {
+      toast('⚠️ บันทึกบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error');
+    }
+  }
+  workOrders.unshift(wo);
+  localStorage.setItem('workOrders', JSON.stringify(workOrders));
+  updateDashboard();
   return wo;
 }
 
-function saveAndGoToList() {
-  const wo = saveWorkOrder();
+async function saveAndGoToList() {
+  const isEdit = !!formEditingId;
+  const wo = await saveWorkOrder();
   if (!wo) return;
-  toast(`✅ บันทึกใบสั่งงาน ${wo.no} เรียบร้อย`, 'success');
+  toast(isEdit ? `✅ อัปเดตใบสั่งงาน ${wo.no} เรียบร้อย` : `✅ บันทึกใบสั่งงาน ${wo.no} เรียบร้อย`, 'success');
   clearForm();
   updateWONumber();
   showPage('wo-list');
 }
 
-function saveAndPrint() {
-  const wo = saveWorkOrder();
+async function saveAndPrint() {
+  const isEdit = !!formEditingId;
+  const wo = await saveWorkOrder();
   if (!wo) return;
-  toast(`✅ บันทึกใบสั่งงาน ${wo.no} เรียบร้อย`, 'success');
+  toast(isEdit ? `✅ อัปเดตใบสั่งงาน ${wo.no} เรียบร้อย` : `✅ บันทึกใบสั่งงาน ${wo.no} เรียบร้อย`, 'success');
   buildPrintSheet(wo).then(() => {
     window.print();
     setTimeout(() => {
@@ -1955,225 +1813,173 @@ function saveAndPrint() {
 
 function printWO() {
   if (!currentViewWO) return;
-  const wo = workOrders.find(w => w.id === currentViewWO.id) || currentViewWO;
   closeModal();
-  buildPrintSheet(wo).then(() => { window.print(); });
-}
-
-function printWOById(id) {
-  const wo = workOrders.find(w => w.id === id);
-  if (!wo) return;
-  buildPrintSheet(wo).then(() => { window.print(); });
+  buildPrintSheet(currentViewWO).then(() => {
+    window.print();
+  });
 }
 
 function buildPrintSheet(wo) {
-  const jobTypeLabel = { repair:'งานซ่อม', rental:'งานรถเช่า', newcar:'งานขาย', other:'งานอื่นๆ' };
-  const jobTypeIcon  = { repair:'🔧', rental:'🚜', newcar:'✨', other:'📦' };
-  const jobColors = {
-    repair: { accent:'#E8803A', light:'#FFF3E8', dark:'#C45E1A' },
-    rental: { accent:'#1A5276', light:'#EAF2FF', dark:'#154360' },
-    newcar: { accent:'#1E8449', light:'#EAFAF1', dark:'#196F3D' },
-    other:  { accent:'#B7770D', light:'#FEF9E7', dark:'#9A6007' },
-  };
-  const jc = jobColors[wo.jobType] || { accent:'#2C3E50', light:'#F2F3F4', dark:'#1A252F' };
-
-  const payLabel     = { cash:'เงินสด', transfer:'โอนเงิน', prepaid:'ชำระล่วงหน้า', credit:'เครดิต', cheque:'รับเช็ค' };
+  const jobTypeLabel = { repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'✨ งานรถใหม่' };
+  const jobColors    = { repair:'#FEF2F2;border-color:#DC2626;color:#DC2626', rental:'#EFF6FF;border-color:#2563EB;color:#2563EB', newcar:'#ECFDF5;border-color:#059669;color:#059669' };
+  const payLabel     = { cash:'💵 เก็บเงินสด', transfer:'📱 ลูกค้าโอน', prepaid:'✅ ชำระล่วงหน้า', credit:'📆 เครดิต' };
   const contactChLbl = { phone:'โทรศัพท์', line:'LINE', fb:'Facebook', email:'E-mail', walkin:'Walk-in', refer:'Referral', other:'อื่นๆ' };
-  const docLabel     = { sign:'เซ็นบิล', invoice:'วางบิล', receipt:'ใบเสร็จ', quotation:'ใบเสนอราคา', contract:'เซ็นสัญญา' };
+  const docLabel     = { sign:'เซ็นบิล', invoice:'วางบิล', receipt:'ใบเสร็จ', quotation:'ใบเสนอราคา' };
 
-  const dash = v => (v && String(v).trim()) ? v : '–';
-
-  // Section header — full width dark bar
-  const sec = (title) => `
-    <div style="background:${jc.accent};padding:5px 10px;margin-bottom:0;">
-      <span style="color:white;font-size:11px;font-weight:800;">${title}</span>
+  // Section 1 — Job type (single radio)
+  const jobTypesHtml = `
+    <div style="display:flex;gap:8px;">
+      ${['repair','rental','newcar'].map(jt => {
+        const sel = wo.jobType === jt;
+        const c   = sel ? jobColors[jt] : '#F8FAFC;border-color:#CBD5E1;color:#94A3B8';
+        const icon = {repair:'🔧', rental:'🚜', newcar:'✨'}[jt];
+        return `<div style="flex:1;background:${c};border:1.5px solid;border-radius:6px;padding:8px 6px;text-align:center;">
+          <div style="font-size:18px;">${icon}</div>
+          <div style="font-size:10px;font-weight:${sel?'800':'500'};margin-top:3px;">${jobTypeLabel[jt]}</div>
+          ${sel ? '<div style="font-size:8px;font-weight:800;margin-top:2px;">✓ เลือกแล้ว</div>' : ''}
+        </div>`;
+      }).join('')}
     </div>`;
 
-  // Table row: label | value
-  const tr = (label, value) => `
-    <tr>
-      <td style="padding:4px 10px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #E5E7EB;width:40%;vertical-align:top;">${label}</td>
-      <td style="padding:4px 10px;font-size:11px;font-weight:600;color:#111827;border-bottom:1px solid #E5E7EB;vertical-align:top;">${dash(value)}</td>
-    </tr>`;
+  const val  = v => v || '<span style="color:#ccc">-</span>';
+  const row2 = (a, b) => `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;">${a}${b}</div>`;
+  const row3 = (a, b, c) => `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 8px;">${a}${b}${c}</div>`;
+  const field = (label, value) => `
+    <div>
+      <div style="font-size:8px;color:#64748B;font-weight:600;letter-spacing:.3px;margin-bottom:1px;">${label}</div>
+      <div style="font-size:10px;border-bottom:1px solid #CBD5E1;padding-bottom:2px;min-height:14px;">${val(value)}</div>
+    </div>`;
+  const sec = (num, title, content, color='#F1F5F9') => `
+    <div style="border:1px solid #CBD5E1;border-radius:5px;margin-bottom:5px;overflow:hidden;">
+      <div style="background:${color};padding:4px 8px;font-size:9px;font-weight:700;color:#0A2540;display:flex;align-items:center;gap:5px;">
+        <span style="width:14px;height:14px;background:#FF6B35;color:white;border-radius:50%;font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">${num}</span>
+        ${title}
+      </div>
+      <div style="padding:6px 8px;">${content}</div>
+    </div>`;
 
-  const tbl = (rows) => `
-    <table style="width:100%;border-collapse:collapse;background:white;">${rows}</table>`;
+  // Section 2 — Customer
+  const contactChannelsTxt = (wo.contactChannels||[]).map(c => contactChLbl[c]||c).join(' · ') || '-';
+  const sec2 = `
+    ${row3(field('เซลล์ผู้รับผิดชอบ', wo.sales), field('บริษัทลูกค้า', wo.company), field('ชื่อผู้ติดต่อ', wo.contactName))}
+    <div style="margin-top:4px;"></div>
+    ${row3(field('เบอร์โทรติดต่อ', wo.phone), field('เวลานัดหมาย', wo.apptTime), field('วันที่เข้างาน', formatDate(wo.date)))}
+    <div style="margin-top:4px;">${field('โลเคชั่นหน้างาน', wo.location)}</div>
+    <div style="margin-top:4px;">${field('ช่องทางติดต่อ', contactChannelsTxt)}</div>`;
 
-  // ── Data ──
-  const contactTxt = (wo.contactChannels||[]).map(c=>contactChLbl[c]||c).join(', ') || '–';
-  const docsTxt    = (wo.docs||[]).map(d=>docLabel[d]||d).join(', ') || '–';
-  const fNosTxt    = (wo.forkliftNos||[]).length ? wo.forkliftNos.join(', ') : '–';
-  const subtypeTxt = (wo.subtype||[]).length ? wo.subtype.join(', ') : '–';
-  const jtLabel    = (jobTypeIcon[wo.jobType]||'') + ' ' + (jobTypeLabel[wo.jobType]||'–');
+  // Section 3 — Forklift
+  const fNos = (wo.forkliftNos||[]).length ? wo.forkliftNos.map(n=>`<span style="background:#DBEAFE;color:#1E40AF;padding:1px 6px;border-radius:4px;font-size:9px;font-family:monospace;">${n}</span>`).join(' ') : '-';
+  const sec3 = `
+    ${row3(field('เชื้อเพลิง', wo.fuel), field('ยี่ห้อ', wo.brand), field('รุ่น', wo.model))}
+    <div style="margin-top:4px;"></div>
+    ${row3(field('เครื่องยนต์', wo.engine), field('Serial No.', wo.serial), field('เบอร์รถ', fNos))}`;
 
-  // ── Logo ──
-  const logoEl  = document.querySelector('.sidebar-logo-img');
+  // Section 4 — Detail
+  const sec4 = `<div style="font-size:10px;border:1px solid #E2E8F0;border-radius:4px;padding:5px 7px;min-height:32px;background:#FFFBEB;">${val(wo.detail)}</div>`;
+
+  // Section 5+6 combined
+  const docsTxt = (wo.docs||[]).map(d=>docLabel[d]||d).join(' · ') || '-';
+  const sec56 = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px 8px;">
+      ${field('การชำระเงิน', payLabel[wo.payment]||wo.payment)}
+      ${field('เอกสาร', docsTxt)}
+      ${field('ช่างผู้ปฏิบัติงาน', wo.tech)}
+      ${field('ผู้รับงาน (ลูกค้า)', wo.cusSign)}
+    </div>
+    ${wo.remark ? `<div style="margin-top:4px;">${field('หมายเหตุ', wo.remark)}</div>` : ''}`;
+
+  // Signature row
+  const sigRow = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:7px;">
+      <div style="border-top:1px solid #94A3B8;padding-top:3px;text-align:center;">
+        <div style="font-size:9px;color:#64748B;">ลายเซ็นช่างผู้ปฏิบัติงาน</div>
+        <div style="height:18px;"></div>
+        <div style="font-size:9px;border-top:1px dashed #CBD5E1;padding-top:2px;">${wo.tech || '...........................'}</div>
+      </div>
+      <div style="border-top:1px solid #94A3B8;padding-top:3px;text-align:center;">
+        <div style="font-size:9px;color:#64748B;">ลายเซ็นลูกค้าผู้รับมอบงาน</div>
+        <div style="height:18px;"></div>
+        <div style="font-size:9px;border-top:1px dashed #CBD5E1;padding-top:2px;">${wo.cusSign || '...........................'}</div>
+      </div>
+    </div>`;
+
+  // Assemble logo base64 src
+  const logoEl = document.querySelector('.sidebar-logo-img');
   const logoSrc = logoEl ? logoEl.src : '';
-  const A5_W = 529;
-  const A5_H = 784;
+
+  // A5 printable area: 148mm × 210mm minus margins 6mm×8mm = 136mm × 198mm
+  // At 96dpi: 1mm ≈ 3.7795px → 136mm ≈ 514px wide, 198mm ≈ 748px tall
+  const A5_W = 514;
+  const A5_H = 748;
 
   document.getElementById('print-sheet').innerHTML = `
-    <div id="ps-scaler" style="width:${A5_W}px;font-family:'Sarabun',sans-serif;background:white;color:#1A1A1A;box-sizing:border-box;">
-
+    <div id="ps-scaler" style="
+      width:${A5_W}px;
+      font-family:'Sarabun',sans-serif;
+      font-size:11px;
+      color:#1A2744;
+      line-height:1.35;
+    ">
       <!-- HEADER -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 6px;border-bottom:3px solid ${jc.accent};margin-bottom:8px;box-sizing:border-box;width:100%;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          ${logoSrc?`<img src="${logoSrc}" style="width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid #E5E7EB;">`:''}
+      <div style="background:#0A2540;color:white;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;border-radius:5px 5px 0 0;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${logoSrc ? `<img src="${logoSrc}" style="width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);object-fit:cover;flex-shrink:0;">` : ''}
           <div>
-            <div style="font-size:8px;color:#6B7280;">บริษัท กู๊ด แอนด์ ริช เพาเวอร์พลัส จำกัด | รถเช่าฟอร์คลิฟท์</div>
-            <div style="font-size:18px;font-weight:900;color:${jc.accent};line-height:1.1;">ใบสั่งงานช่าง</div>
-            <div style="font-size:8px;color:#6B7280;">Work Order : Forklift Service</div>
+            <div style="font-size:13px;font-weight:800;letter-spacing:-.2px;">ใบสั่งงานซ่อมฟอร์คลิฟท์</div>
+            <div style="font-size:8.5px;opacity:.65;">Good &amp; Rich Powerplus Co., Ltd.</div>
           </div>
         </div>
-        <div style="text-align:center;flex:1;">
-          <div style="font-size:20px;font-weight:900;color:${jc.accent};font-family:monospace;letter-spacing:1px;">${wo.no}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:9px;color:#6B7280;">${formatDate(wo.date)}</div>
-          ${wo.sales ? `<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:${jc.light};border:1.5px solid ${jc.accent};border-radius:5px;padding:3px 8px;">
-            <span style="font-size:9px;color:#6B7280;">👤 เซลล์</span>
-            <span style="font-size:11px;font-weight:800;color:${jc.accent};">${wo.sales}</span>
-          </div>` : ''}
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:700;font-family:monospace;color:#FF6B35;background:rgba(255,107,53,0.2);padding:3px 10px;border-radius:5px;border:1px solid rgba(255,107,53,0.4);">${wo.no}</div>
+          <div style="font-size:8px;opacity:.6;margin-top:2px;">${formatDate(wo.date)}</div>
         </div>
       </div>
 
-      <div style="padding:0 6px 8px;box-sizing:border-box;width:100%;">
-
-        <!-- ส่วนที่ 1: ประเภทงาน -->
-        <div style="border:1.5px solid ${jc.accent};border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          ${sec('ส่วนที่ 1 : ประเภทงาน')}
-          ${tbl(
-            tr('ประเภทงาน', jtLabel) +
-            tr('ประเภทย่อย', subtypeTxt)
-          )}
-        </div>
-
-        <!-- ส่วนที่ 2: ข้อมูลลูกค้า -->
-        <div style="border:1.5px solid ${jc.accent};border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          ${sec('ส่วนที่ 2 : ข้อมูลลูกค้า')}
-          ${tbl(
-            tr('บริษัทลูกค้า', wo.company) +
-            tr('ชื่อผู้ติดต่อ', wo.contactName) +
-            tr('เบอร์โทรติดต่อ', wo.phone) +
-            tr('โลเคชั่นหน้างาน', wo.location) +
-            tr('วันที่เข้างาน', formatDate(wo.date) + (wo.apptTime ? '  ⏰ ' + wo.apptTime : '')) +
-            tr('ช่องทางติดต่อ', contactTxt)
-          )}
-        </div>
-
-        <!-- ส่วนที่ 3: ข้อมูลรถฟอร์คลิฟท์ -->
-        <div style="border:1.5px solid ${jc.accent};border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          ${sec('ส่วนที่ 3 : ข้อมูลรถฟอร์คลิฟท์')}
-          ${tbl(
-            tr('เชื้อเพลิง / ยี่ห้อ / รุ่น', [wo.fuel, wo.brand, wo.model].filter(v=>v&&v.trim()).join('  |  ') || '–') +
-            tr('เครื่องยนต์ / Serial No.', [wo.engine, wo.serial].filter(v=>v&&v.trim()).join('  |  ') || '–') +
-            tr('เบอร์รถฟอร์คลิฟท์', fNosTxt)
-          )}
-        </div>
-
-        <!-- ส่วนที่ 4: รายละเอียดงาน -->
-        <div style="border:1.5px solid ${jc.accent};border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          ${sec('ส่วนที่ 4 : รายละเอียดงาน')}
-          <div style="padding:6px 10px;font-size:11px;font-weight:500;color:#111827;line-height:1.7;min-height:32px;white-space:pre-wrap;">${dash(wo.detail)}</div>
-        </div>
-
-        <!-- ส่วนที่ 5: การชำระเงิน/เอกสาร/ระยะเวลา -->
-        <div style="border:1.5px solid ${jc.accent};border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          ${sec('ส่วนที่ 5 : การชำระเงิน / เอกสาร / ระยะเวลาทำงาน')}
-          ${tbl(
-            tr('การชำระเงิน', payLabel[wo.payment]||wo.payment) +
-            tr('เอกสาร', docsTxt) +
-            tr('ช่างผู้ปฏิบัติงาน', wo.tech) +
-            tr('ระยะเวลาทำงาน', wo.workHours ? wo.workHours + ' ชั่วโมง' + (wo.tech ? '  ·  ' + wo.tech.split(',').filter(s=>s.trim()).length + ' คน  ·  ≈ ' + (wo.workHours * wo.tech.split(',').filter(s=>s.trim()).length * 250).toLocaleString() + ' บ.' : '') : '–')
-          )}
-          ${wo.remark ? `<div style="margin:0 0 0;background:#FFF0F0;border-top:2px solid #DC2626;padding:6px 10px;font-size:11px;font-weight:700;color:#DC2626;">⚠️ หมายเหตุ: ${wo.remark}</div>` : ''}
-        </div>
-
-        <!-- ประวัติย้ายวัน (ถ้ามี) -->
-        ${(wo.rescheduleHistory||[]).length ? `
-        <div style="border:1.5px solid #F59E0B;border-radius:4px;overflow:hidden;margin-bottom:6px;">
-          <div style="background:#F59E0B;padding:5px 10px;">
-            <span style="color:white;font-size:11px;font-weight:800;">📅 ประวัติการย้ายวันนัด (${wo.rescheduleHistory.length} ครั้ง)</span>
-          </div>
-          ${tbl((wo.rescheduleHistory||[]).map((h,i)=>tr(
-            `ครั้งที่ ${i+1}`,
-            `${formatDate(h.fromDate)}${h.fromTime?' '+h.fromTime:''} → ${formatDate(h.toDate)}${h.toTime?' '+h.toTime:''} | ${h.reason}`
-          )).join(''))}
-        </div>` : ''}
-
-        <!-- ลายเซ็น -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;padding-top:6px;border-top:1px dashed #D1D5DB;">
-          ${['ช่างผู้รับผิดชอบ','ผู้ตรวจสอบ','ผู้อนุมัติ'].map((lbl,i)=>`
-            <div style="text-align:center;">
-              <div style="height:26px;"></div>
-              <div style="border-top:1.5px solid #7F8C8D;padding-top:4px;">
-                <div style="font-size:10px;font-weight:600;color:#374151;">${i===0?(wo.tech||'........................................'):'........................................'}</div>
-                <div style="font-size:9px;color:#6B7280;margin-top:1px;">(${lbl})</div>
-              </div>
-            </div>`).join('')}
-        </div>
-
-      </div>
+      ${sec(1, 'ประเภทงาน', jobTypesHtml)}
+      ${sec(2, 'ข้อมูลลูกค้า / เซลล์ผู้รับผิดชอบ', sec2)}
+      ${sec(3, 'ข้อมูลรถฟอร์คลิฟท์', sec3, '#F0F9FF')}
+      ${sec(4, 'รายละเอียดงาน', sec4, '#FFFBEB')}
+      ${sec('5–6', 'การชำระเงิน / เอกสาร / ช่างผู้ปฏิบัติงาน', sec56)}
+      ${sigRow}
     </div>
   `;
 
-  // Make print-sheet visible for accurate height measurement
-  const sheet = document.getElementById('print-sheet');
-  sheet.style.visibility = 'visible';
-  sheet.style.top = '0';
-  sheet.style.left = '0';
-  sheet.style.zIndex = '9999';
-
-  // Use zoom instead of transform:scale — avoids blur, stays crisp
+  // Scale to fit A5 height — returns Promise that resolves after paint + scale
   return new Promise(resolve => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const el = document.getElementById('ps-scaler');
         if (el) {
-          el.style.zoom = '1';
-          const contentH = Math.max(el.offsetHeight, el.scrollHeight);
-          const contentW = el.offsetWidth;
-          // คำนวณ zoom จากทั้งกว้างและสูง เอาค่าที่น้อยกว่า
-          const zoomByH = (A5_H - 2) / contentH;
-          const zoomByW = A5_W / contentW;
-          const zoom = Math.min(1, zoomByH, zoomByW);
-          el.style.zoom = String(zoom);
+          const h = el.offsetHeight;
+          if (h > A5_H) {
+            const scale = A5_H / h;
+            el.style.transformOrigin = 'top left';
+            el.style.transform = `scale(${scale})`;
+            document.getElementById('print-sheet').style.height   = (h * scale) + 'px';
+            document.getElementById('print-sheet').style.overflow = 'hidden';
+          }
         }
-        setTimeout(() => {
-          const hideAfterPrint = () => {
-            sheet.style.visibility = 'hidden';
-            sheet.style.top = '-9999px';
-            sheet.style.left = '-9999px';
-            sheet.style.zIndex = '-1';
-            window.removeEventListener('afterprint', hideAfterPrint);
-          };
-          window.addEventListener('afterprint', hideAfterPrint);
-          resolve();
-        }, 250);
+        // Extra 120ms buffer for slow machines / large content
+        setTimeout(resolve, 120);
       });
     });
   });
 }
 
-function clearForm() {
+function clearForm(clearDraft = true) {
   document.querySelectorAll('#page-create-wo input:not([type=radio]):not([type=checkbox]), #page-create-wo textarea, #page-create-wo select').forEach(el => {
     if (el.tagName === 'SELECT') el.selectedIndex = 0;
     else el.value = '';
   });
+  // Uncheck all radios/checkboxes manually
   document.querySelectorAll('#page-create-wo input[type=radio], #page-create-wo input[type=checkbox]').forEach(el => el.checked = false);
   document.querySelectorAll('.job-type-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('credit-detail').style.display = 'none';
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
   clearForkliftRows();
-  // Reset tech picker
-  selectedTechs = [];
-  renderTechPickerTags();
-  // Hide all subtype groups
-  ['repair','rental','newcar'].forEach(jt => {
-    const el = document.getElementById('subtype-' + jt);
-    if (el) el.style.display = 'none';
-  });
+  formEditingId = null;
+  if (clearDraft) { localStorage.removeItem('woDraft'); hideDraftBanner(); }
 }
 
 // ============================
@@ -2184,16 +1990,21 @@ function applyFilters() {
   const status = document.getElementById('filter-status')?.value || '';
   const dateFrom = document.getElementById('filter-date-from')?.value || '';
   const dateTo = document.getElementById('filter-date-to')?.value || '';
+  const showArchived = document.getElementById('toggle-archived')?.checked || false;
 
   let data = [...workOrders];
+
+  // ซ่อน archived โดย default
+  if (!showArchived) data = data.filter(w => !w.archived);
 
   if (q) {
     data = data.filter(w =>
       w.company.toLowerCase().includes(q) ||
       w.no.toLowerCase().includes(q) ||
-      (w.sales||'').toLowerCase().includes(q) ||
       (w.contactName||'').toLowerCase().includes(q) ||
-      (w.tech||'').toLowerCase().includes(q)
+      (w.tech||'').toLowerCase().includes(q) ||
+      (w.detail||'').toLowerCase().includes(q) ||
+      (w.location||'').toLowerCase().includes(q)
     );
   }
   if (status) data = data.filter(w => w.status === status);
@@ -2217,220 +2028,225 @@ function clearDateFilter() {
 }
 
 function renderWOList(list) {
-  const data = list !== undefined ? [...list] : [...workOrders];
+  const data = list !== undefined ? list : workOrders;
   const tbody = document.getElementById('wo-list-body');
   const countEl = document.getElementById('wo-result-count');
   if (countEl) countEl.textContent = data.length ? `พบ ${data.length} รายการ` : '';
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--muted)">ไม่พบรายการ — <a onclick="showPage('create-wo')" style="color:var(--accent);cursor:pointer">สร้างใบสั่งงานใหม่</a></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">ไม่พบรายการ — <a onclick="showPage('create-wo')" style="color:var(--accent);cursor:pointer">สร้างใบสั่งงานใหม่</a></td></tr>`;
     return;
   }
-
-  // Sort: job type group first, then by date asc within group
-  data.sort((a, b) => {
-    const ao = JT_ORDER[a.jobType] || 99;
-    const bo = JT_ORDER[b.jobType] || 99;
-    if (ao !== bo) return ao - bo;
-    return (a.date||'') < (b.date||'') ? -1 : 1;
-  });
-
-  const statusBadge = s => {
-    if (s==='รอดำเนินการ')   return '<span class="status-badge badge-pending">รอ</span>';
+  const payLabel = {cash:'💵 สด',transfer:'📱 โอน',prepaid:'✅ ล่วงหน้า',credit:'📆 เครดิต'};
+  const statusBadge = (s) => {
+    if (s==='รอดำเนินการ') return '<span class="status-badge badge-pending">รอ</span>';
     if (s==='กำลังดำเนินการ') return '<span class="status-badge badge-progress">กำลังทำ</span>';
-    if (s==='เสร็จแล้ว')     return '<span class="status-badge badge-done">เสร็จ</span>';
-    if (s==='ยกเลิก')        return '<span class="status-badge badge-cancel">ยกเลิก</span>';
+    if (s==='เสร็จแล้ว') return '<span class="status-badge badge-done">เสร็จ</span>';
     return `<span class="status-badge">${s}</span>`;
   };
-  const fmtDate = d => {
-    const p = _parseDateParts(d);
-    if (!p) return '-';
-    return `${String(p.day).padStart(2,'0')}/${String(p.m).padStart(2,'0')}/${p.y+543}`;
-  };
-
-  let lastJT = null;
-  let rowNum = 0;
-  tbody.innerHTML = data.map(wo => {
-    const c   = JT_COLOR[wo.jobType] || {};
-    const lbl = JT_LABEL[wo.jobType] || '-';
-    const isNewGroup = wo.jobType !== lastJT;
-    if (isNewGroup) rowNum = 0;
-    lastJT = wo.jobType;
-    rowNum++;
-    const groupRow = isNewGroup ? `<tr style="background:${c.bg||'#F8FAFC'};"><td colspan="12" style="padding:6px 14px;font-size:12px;font-weight:800;color:${c.text||'#64748B'};letter-spacing:.5px;border-left:4px solid ${c.border||'#CBD5E1'};">${lbl}</td></tr>` : '';
-    return groupRow + `
-    <tr onclick="viewWO('${wo.id}')" style="border-left:3px solid ${c.border||'transparent'};">
-      <td style="text-align:center;font-size:12px;color:var(--muted);font-weight:600;">${rowNum}</td>
-      <td style="white-space:nowrap;">${fmtDate(wo.date)}<br><span style="font-size:11px;color:var(--muted)">${wo.apptTime||''}</span></td>
+  const jtLbl = { repair:'🔧 ซ่อม', rental:'🚜 เช่า', newcar:'✨ ใหม่' };
+  const jtCol = { repair:'#DC2626', rental:'#2563EB', newcar:'#059669' };
+  tbody.innerHTML = data.map(wo => `
+    <tr onclick="viewWO('${wo.id}')" style="${wo.archived ? 'opacity:0.5;text-decoration:line-through;' : ''}">
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);">${wo.no}</span>${wo.archived ? ' <span style="font-size:10px;background:#F1F5F9;color:#94A3B8;padding:1px 5px;border-radius:4px;text-decoration:none;">📦 Archive</span>' : ''}</td>
+      <td>${formatDate(wo.date)}<br><span style="font-size:11px;color:var(--muted)">${wo.apptTime||''}</span></td>
       <td><strong>${wo.company}</strong><br><span style="font-size:11px;color:var(--muted)">${wo.contactName||wo.phone||''}</span>${(wo.rescheduleHistory||[]).length?`<br><span style="font-size:10px;font-weight:700;color:#B45309;">📅 เลื่อน×${wo.rescheduleHistory.length}</span>`:''}</td>
-      <td style="font-size:12px;">${wo.sales||'<span style="color:#ccc">-</span>'}</td>
-      <td style="font-size:12px;">${wo.tech||'<span style="color:#ccc">-</span>'}</td>
-      <td style="font-size:12px;">${lbl?`<span style="font-weight:700;color:${c.text||'#64748B'};">${lbl}</span>`:'-'}</td>
-      <td style="font-size:12px;color:#475569;max-width:180px;">${wo.detail?`<span title="${wo.detail}">${wo.detail.substring(0,55)}${wo.detail.length>55?'…':''}</span>`:'<span style="color:#ccc">-</span>'}</td>
-      <td style="font-size:12px;font-weight:700;color:#1D4ED8;max-width:130px;">${wo.location?`<span title="${wo.location}" style="background:#EFF6FF;padding:2px 7px;border-radius:4px;display:inline-block;">${wo.location.substring(0,35)}${wo.location.length>35?'…':''}</span>`:'<span style="color:#ccc">-</span>'}</td>
-      <td style="font-size:12px;max-width:150px;">${wo.remark?`<span style="color:#DC2626;font-weight:600;" title="${wo.remark}">${wo.remark.substring(0,50)}${wo.remark.length>50?'…':''}</span>`:'<span style="color:#ccc">-</span>'}</td>
-      <td><span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent);font-size:12px;">${wo.no}</span></td>
+      <td>${wo.tech||'<span style="color:#ccc">-</span>'}</td>
+      <td style="font-size:12px;">${jtLbl[wo.jobType]?`<span style="font-weight:700;color:${jtCol[wo.jobType]};">${jtLbl[wo.jobType]}</span>`:'-'}</td>
+      <td style="font-size:12px;color:#475569;max-width:200px;">${wo.detail?`<span title="${wo.detail}">${wo.detail.substring(0,60)}${wo.detail.length>60?'…':''}</span>`:'<span style="color:#ccc">-</span>'}</td>
+      <td style="font-size:12px;">${payLabel[wo.payment]||wo.payment||'-'}</td>
       <td>${statusBadge(wo.status)}</td>
       <td onclick="event.stopPropagation();" style="white-space:nowrap;">
         <button class="btn btn-outline btn-sm" onclick="viewWO('${wo.id}')">ดู</button>
-        <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="event.stopPropagation();openEditModal('${wo.id}')">✏️</button>
-        <button class="btn btn-outline btn-sm" style="margin-left:4px;" onclick="event.stopPropagation();printWOById('${wo.id}')" title="พิมพ์ใบสั่งงาน">🖨️</button>
+        ${!wo.archived ? `<button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="openEditModal('${wo.id}')">✏️</button>` : ''}
+        ${wo.archived
+          ? `<button class="btn btn-outline btn-sm" style="margin-left:4px;color:#059669;border-color:#059669;" onclick="unarchiveWO('${wo.id}')">🔄 กู้คืน</button>`
+          : `<button class="btn btn-outline btn-sm" style="margin-left:4px;color:#94A3B8;border-color:#CBD5E1;font-size:11px;" onclick="archiveWO('${wo.id}')" title="Archive ใบสั่งงานนี้">📦</button>`
+        }
       </td>
-    </tr>`;
-  }).join('');
-
-  // Summary row
-  const total = data.length;
-  const done  = data.filter(w=>w.status==='เสร็จแล้ว').length;
-  const inprog= data.filter(w=>w.status==='กำลังดำเนินการ').length;
-  const wait  = data.filter(w=>w.status==='รอดำเนินการ').length;
-  const byJT  = {
-    repair: data.filter(w=>w.jobType==='repair').length,
-    rental: data.filter(w=>w.jobType==='rental').length,
-    newcar: data.filter(w=>w.jobType==='newcar').length,
-    other:  data.filter(w=>w.jobType==='other').length,
-  };
-  tbody.innerHTML += `
-    <tr style="background:#F1F5F9;border-top:2px solid var(--primary);font-weight:700;">
-      <td colspan="6" style="padding:10px 14px;font-size:13px;color:var(--primary);">
-        📊 สรุปรวม &nbsp;·&nbsp;
-        <span style="color:#DC2626;">🔧 ซ่อม ${byJT.repair}</span> &nbsp;
-        <span style="color:#2563EB;">🚜 เช่า ${byJT.rental}</span> &nbsp;
-        <span style="color:#059669;">💰 ขาย ${byJT.newcar}</span> &nbsp;
-        <span style="color:#CA8A04;">📦 อื่นๆ ${byJT.other}</span>
-      </td>
-      <td colspan="2" style="padding:10px 14px;font-size:13px;color:var(--primary);">
-        <span style="color:#F59E0B;">⏳ รอ ${wait}</span> &nbsp;
-        <span style="color:#3B82F6;">⚙️ กำลังทำ ${inprog}</span> &nbsp;
-        <span style="color:#10B981;">✅ เสร็จ ${done}</span>
-      </td>
-      <td colspan="4" style="padding:10px 14px;text-align:right;font-size:14px;color:var(--primary);">
-        รวมทั้งหมด <strong style="font-size:18px;margin-left:6px;">${total}</strong> รายการ
-      </td>
-    </tr>`;
+    </tr>
+  `).join('');
 }
 
 function filterWOList(q) { applyFilters(); }
 function filterByStatus(s) { applyFilters(); }
 
 // ============================
-// PRINT WO LIST (ตารางสรุป)
+// ARCHIVE
 // ============================
-function printWOList() {
-  // Get currently filtered/displayed rows
-  const rows = [...document.querySelectorAll('#wo-list-body tr[onclick]')];
-  if (!rows.length) { toast('ไม่มีรายการที่จะพิมพ์', 'error'); return; }
-
-  // Collect displayed WO ids from onclick attr
-  const ids = rows.map(r => {
-    const m = r.getAttribute('onclick').match(/'([^']+)'/);
-    return m ? m[1] : null;
-  }).filter(Boolean);
-  const wos = ids.map(id => workOrders.find(w => w.id === id)).filter(Boolean);
-
-  const fmtDate = d => {
-    const p = _parseDateParts(d);
-    if (!p) return '-';
-    return `${String(p.day).padStart(2,'0')}/${String(p.m).padStart(2,'0')}/${p.y+543}`;
-  };
-
-  const now = new Date();
-  const printDate = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()+543} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} น.`;
-
-  const statusColor = s => {
-    if (s==='รอดำเนินการ')   return '#92400E;background:#FEF3C7';
-    if (s==='กำลังดำเนินการ') return '#1E40AF;background:#DBEAFE';
-    if (s==='เสร็จแล้ว')     return '#065F46;background:#D1FAE5';
-    if (s==='ยกเลิก')        return '#991B1B;background:#FEE2E2';
-    return '#64748B;background:#F1F5F9';
-  };
-
-  const tableRows = wos.map((wo, i) => {
-    const c   = JT_COLOR[wo.jobType] || {};
-    const lbl = JT_LABEL[wo.jobType] || '-';
-    const sc  = statusColor(wo.status);
-    return `<tr style="border-bottom:1px solid #E2E8F0;${i%2===1?'background:#F8FAFC':''}">
-      <td style="padding:5px 7px;font-size:10px;font-family:monospace;font-weight:700;color:#FF6B35;white-space:nowrap;">${wo.no}</td>
-      <td style="padding:5px 7px;font-size:10px;white-space:nowrap;">${fmtDate(wo.date)}${wo.apptTime?`<br><span style="color:#94A3B8;font-size:9px;">${wo.apptTime}</span>`:''}</td>
-      <td style="padding:5px 7px;font-size:10px;font-weight:700;">${wo.company}</td>
-      <td style="padding:5px 7px;font-size:10px;">${wo.sales||'-'}</td>
-      <td style="padding:5px 7px;font-size:10px;">${wo.tech||'-'}</td>
-      <td style="padding:5px 7px;font-size:10px;"><span style="font-weight:700;color:${c.text||'#64748B'};">${lbl}</span></td>
-      <td style="padding:5px 7px;font-size:10px;max-width:120px;color:#475569;">${(wo.detail||'').substring(0,45)}${(wo.detail||'').length>45?'…':''}</td>
-      <td style="padding:5px 7px;font-size:10px;max-width:90px;color:#475569;">${(wo.location||'').substring(0,30)}${(wo.location||'').length>30?'…':''}</td>
-      <td style="padding:5px 7px;font-size:10px;color:#DC2626;font-weight:${wo.remark?'600':'400'};">${wo.remark?wo.remark.substring(0,40)+((wo.remark||'').length>40?'…':''):'-'}</td>
-      <td style="padding:5px 7px;font-size:9px;white-space:nowrap;"><span style="padding:2px 6px;border-radius:8px;font-weight:700;color:${sc};">${wo.status}</span></td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('print-list-sheet').innerHTML = `
-    <div style="font-family:'Sarabun',sans-serif;padding:8mm 10mm;color:#1A2744;">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:7px;border-bottom:2.5px solid #0A2540;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          ${logoSrc?`<img src="${logoSrc}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`:''}
-          <div>
-            <div style="font-size:16px;font-weight:800;color:#0A2540;">รายการใบสั่งงาน — Good &amp; Rich Powerplus Co., Ltd.</div>
-            <div style="font-size:10px;color:#64748B;margin-top:2px;">พิมพ์เมื่อ ${printDate} · จำนวน ${wos.length} รายการ</div>
-          </div>
-        </div>
-        <div style="text-align:right;font-size:10px;color:#64748B;">
-          <div style="font-size:12px;font-weight:700;color:#0A2540;">Good &amp; Rich Powerplus Co., Ltd.</div>
-          <div>goodrichforklift.com</div>
-        </div>
-      </div>
-      <!-- Table -->
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="background:#0A2540;color:white;">
-            <th style="padding:6px 8px;text-align:left;font-size:10px;white-space:nowrap;">เลขที่ WO</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">วันที่นัด</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">บริษัทลูกค้า</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">เซลล์</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">ช่าง</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">ประเภทงาน</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;min-width:130px;">รายละเอียดงาน</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;min-width:100px;">โลเคชั่น</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;min-width:100px;">หมายเหตุ</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;">สถานะ</th>
-          </tr>
-        </thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-      <!-- Footer -->
-      <div style="margin-top:8px;font-size:9px;color:#94A3B8;border-top:1px solid #E2E8F0;padding-top:5px;display:flex;justify-content:space-between;">
-        <span>Forklift Service System — Good &amp; Rich Powerplus Co., Ltd.</span>
-        <span>ทั้งหมด ${wos.length} รายการ</span>
-      </div>
-    </div>`;
-
-  document.body.classList.add('print-list-mode');
-
-  // Inject A4 landscape page size (overrides default A5)
-  const styleEl = document.createElement('style');
-  styleEl.id = 'print-list-override';
-  styleEl.textContent = '@page { size: A4 landscape; margin: 8mm 10mm; }';
-  document.head.appendChild(styleEl);
-
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      document.body.classList.remove('print-list-mode');
-      const s = document.getElementById('print-list-override');
-      if (s) s.remove();
-    }, 800);
-  }, 150);
+async function archiveWO(id) {
+  if (!confirm('Archive ใบสั่งงานนี้?\nจะซ่อนจากรายการหลัก แต่ไม่ถูกลบ\nกู้คืนได้ตลอดเวลา')) return;
+  const idx = workOrders.findIndex(w => w.id === id);
+  if (idx !== -1) {
+    workOrders[idx].archived = true;
+    workOrders[idx].updatedAt = new Date().toISOString();
+    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    if (API_URL) {
+      try { await apiPost({ action: 'archiveWorkOrder', id, archived: true }); }
+      catch (err) { toast('⚠️ Archive บน API ไม่สำเร็จ — บันทึก local แล้ว', 'error'); }
+    }
+    toast('📦 Archive ใบสั่งงานแล้ว', 'success');
+    applyFilters();
+  }
 }
 
-function printSingleFromList(id) {
-  const wo = workOrders.find(w => w.id === id);
-  if (!wo) return;
-  buildPrintSheet(wo).then(() => window.print());
+async function unarchiveWO(id) {
+  const idx = workOrders.findIndex(w => w.id === id);
+  if (idx !== -1) {
+    workOrders[idx].archived = false;
+    workOrders[idx].updatedAt = new Date().toISOString();
+    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    if (API_URL) {
+      try { await apiPost({ action: 'archiveWorkOrder', id, archived: false }); }
+      catch (err) { toast('⚠️ กู้คืนบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error'); }
+    }
+    toast('✅ กู้คืนใบสั่งงานแล้ว', 'success');
+    applyFilters();
+  }
+}
+
+// ============================
+// EXPORT / IMPORT DATA
+// ============================
+function exportData() {
+  const data = JSON.stringify({ workOrders }, null, 2);
+  const blob = new Blob([data], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `GoodRich_WO_Backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📤 Export ข้อมูลเรียบร้อย — นำไฟล์ไป Import ในบราวเซอร์อื่นได้เลย', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm(`⚠️ Import จะแทนที่ข้อมูลทั้งหมดในระบบนี้\nแนะนำ Export สำรองก่อน\n\nดำเนินการต่อหรือไม่?`)) {
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!Array.isArray(parsed.workOrders)) throw new Error('Invalid format');
+      workOrders = parsed.workOrders;
+      localStorage.setItem('workOrders', JSON.stringify(workOrders));
+      toast(`✅ Import สำเร็จ: ${workOrders.length} รายการ`, 'success');
+      renderWOList();
+      updateDashboard();
+      // Push imported data to API if available
+      if (API_URL) {
+        let pushed = 0;
+        for (const wo of workOrders) {
+          if (!wo.id || /^\d+$/.test(wo.id)) {
+            wo.id = generateWOId();
+          }
+          if (!wo.updatedAt) wo.updatedAt = wo.created || new Date().toISOString();
+          try { await apiPost({ action: 'saveWorkOrder', data: wo }); pushed++; } catch(e) {}
+        }
+        if (pushed > 0) toast(`✅ ซิงค์ ${pushed} รายการไปยัง API เรียบร้อย`, 'success');
+      }
+    } catch (err) {
+      toast('❌ ไฟล์ไม่ถูกต้อง กรุณาใช้ไฟล์ .json ที่ Export จากระบบนี้', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ============================
+// DRAFT AUTO-SAVE
+// ============================
+function saveDraft() {
+  if (formEditingId) return; // ไม่ draft เมื่อ edit WO เดิม
+  const fields = {};
+  document.querySelectorAll('#page-create-wo [id^="f-"]').forEach(el => {
+    fields[el.id] = el.value;
+  });
+  fields['_radios'] = {};
+  ['job_type', 'payment'].forEach(name => {
+    const el = document.querySelector(`#page-create-wo input[name="${name}"]:checked`);
+    if (el) fields['_radios'][name] = el.value;
+  });
+  fields['_checkboxes'] = {};
+  ['contact_ch', 'doc'].forEach(name => {
+    fields['_checkboxes'][name] = [...document.querySelectorAll(`#page-create-wo input[name="${name}"]:checked`)].map(e => e.value);
+  });
+  fields['_forkliftNos'] = getForkliftNumbers();
+  localStorage.setItem('woDraft', JSON.stringify(fields));
+}
+
+function checkDraft() {
+  if (formEditingId) return;
+  const draft = localStorage.getItem('woDraft');
+  const banner = document.getElementById('draft-restore-banner');
+  if (banner) banner.style.display = draft ? 'flex' : 'none';
+}
+
+function restoreDraft() {
+  const draft = localStorage.getItem('woDraft');
+  if (!draft) return;
+  try {
+    const fields = JSON.parse(draft);
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    Object.keys(fields).forEach(k => { if (!k.startsWith('_')) set(k, fields[k]); });
+    if (fields['_radios']) {
+      Object.entries(fields['_radios']).forEach(([name, val]) => {
+        const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+        if (el) {
+          el.checked = true;
+          if (name === 'payment' && val === 'credit') document.getElementById('credit-detail').style.display = 'block';
+        }
+      });
+      const jtMap = { repair: 'jt-repair', rental: 'jt-rental', newcar: 'jt-newcar' };
+      const jt = fields['_radios']['job_type'];
+      if (jt && jtMap[jt]) {
+        document.querySelectorAll('.job-type-card').forEach(c => c.classList.remove('selected'));
+        const card = document.getElementById(jtMap[jt]);
+        if (card) { card.classList.add('selected'); card.querySelector('input').checked = true; }
+      }
+    }
+    if (fields['_checkboxes']) {
+      Object.entries(fields['_checkboxes']).forEach(([name, vals]) => {
+        vals.forEach(val => {
+          const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+          if (el) el.checked = true;
+        });
+      });
+    }
+    if (fields['_forkliftNos'] && fields['_forkliftNos'].length) {
+      clearForkliftRows();
+      fields['_forkliftNos'].forEach((n, i) => {
+        if (i === 0) { const r = document.querySelector('.forklift-row input'); if (r) r.value = n; }
+        else addForkliftRow(n);
+      });
+    }
+    hideDraftBanner();
+    toast('📝 คืนค่าข้อมูลที่กรอกค้างไว้แล้ว', 'success');
+  } catch (e) {
+    localStorage.removeItem('woDraft');
+  }
+}
+
+function discardDraft() {
+  localStorage.removeItem('woDraft');
+  hideDraftBanner();
+  toast('🗑️ ละทิ้งข้อมูลค้างแล้ว', 'success');
+}
+
+function hideDraftBanner() {
+  const banner = document.getElementById('draft-restore-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 // ============================
 // EDIT MODAL
 // ============================
+let editingWOId = null;
+
 function openEditModal(id) {
   const wo = workOrders.find(w => w.id === id);
   if (!wo) return;
@@ -2441,8 +2257,8 @@ function openEditModal(id) {
 
   const contactChOpts = ['phone','line','fb','email','walkin','refer','other'];
   const contactChLabel = {phone:'โทรศัพท์',line:'LINE',fb:'Facebook',email:'E-mail',walkin:'Walk-in',refer:'Referral',other:'อื่นๆ'};
-  const jobTypeOpts = [{val:'repair',label:'🔧 งานซ่อม'},{val:'rental',label:'🚜 งานรถเช่า'},{val:'newcar',label:'💰 งานขาย'},{val:'other',label:'📦 งานอื่นๆ'}];
-  const docOpts = [{val:'sign',label:'🖊️ เซ็นบิล'},{val:'invoice',label:'📄 วางบิล'},{val:'receipt',label:'🧾 ใบเสร็จ'},{val:'quotation',label:'📋 ใบเสนอราคา'},{val:'contract',label:'📝 เซ็นสัญญา'}];
+  const jobTypeOpts = [{val:'repair',label:'🔧 งานซ่อม'},{val:'rental',label:'🚜 งานรถเช่า'},{val:'newcar',label:'✨ งานรถใหม่'}];
+  const docOpts = [{val:'sign',label:'🖊️ เซ็นบิล'},{val:'invoice',label:'📄 วางบิล'},{val:'receipt',label:'🧾 ใบเสร็จ'},{val:'quotation',label:'📋 ใบเสนอราคา'}];
 
   document.getElementById('edit-modal-body').innerHTML = `
     <div style="display:grid;gap:14px;padding:4px 0;">
@@ -2513,7 +2329,7 @@ function openEditModal(id) {
         <div class="form-group">
           <label class="form-label">ยี่ห้อ</label>
           <select class="form-select" id="e-brand">
-            ${['','HELI','Hangcha','Toyota','Komatsu','Nissan','Mitsubishi','Caterpillar','Hyster','Crown','อื่นๆ'].map(b=>`<option ${wo.brand===b?'selected':''}>${b}</option>`).join('')}
+            ${['','HELI','Toyota','Komatsu','Nissan','Mitsubishi','Caterpillar','Hyster','Crown','อื่นๆ'].map(b=>`<option ${wo.brand===b?'selected':''}>${b}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -2539,42 +2355,17 @@ function openEditModal(id) {
         <textarea class="form-textarea" id="e-detail" style="min-height:90px;">${wo.detail||''}</textarea>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">ประเภทย่อยของงาน</label>
-        <div class="check-group" id="e-subtype-list">
-          ${(()=>{
-            const subtypeMap = {
-              repair:['PM ลูกค้าประจำเดือน','ตรวจเช็ค','ถอด-ประกอบอะไหล่','ซื้อ-รับอะไหล่','ยกรถกลับมาซ่อม-ส่งคืนรถซ่อม','เซ็นบิล+วางบิล','งานเคลม/แก้ไขลูกค้าซ่อม','งานในบริษัท'],
-              rental:['ตรวจเช็ค','ซ่อม-ประกอบอะไหล่','เซอร์วิสประจำเดือนรถเช่า','ซื้อ-รับอะไหล่','เซ็นบิล+วางบิล','งานในบริษัท'],
-              newcar:['ส่ง-รับรถใหม่','ตรวจเช็ค','เซอร์วิสรถใหม่','งานเคลมรถใหม่','เซ็นบิล+วางบิล+รับเช็ค','งานในบริษัท'],
-              other:[]
-            };
-            const opts = subtypeMap[wo.jobType] || [];
-            if (!opts.length) return '<span style="color:var(--muted);font-size:13px;">ไม่มีประเภทย่อย</span>';
-            return opts.map(s=>`<label class="check-item"><input type="checkbox" name="e-subtype" value="${s}" ${(wo.subtype||[]).includes(s)?'checked':''}> ${s}</label>`).join('');
-          })()}
-        </div>
-      </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
           <label class="form-label">การชำระเงิน</label>
           <select class="form-select" id="e-payment">
             <option value="">-- เลือก --</option>
-            ${[{v:'cash',l:'💵 เก็บเงินสด'},{v:'transfer',l:'📱 ลูกค้าโอน'},{v:'prepaid',l:'✅ ชำระล่วงหน้า'},{v:'credit',l:'📆 เครดิต'},{v:'cheque',l:'🧾 รับเช็ค'}].map(p=>`<option value="${p.v}" ${wo.payment===p.v?'selected':''}>${p.l}</option>`).join('')}
+            ${[{v:'cash',l:'💵 เก็บเงินสด'},{v:'transfer',l:'📱 ลูกค้าโอน'},{v:'prepaid',l:'✅ ชำระล่วงหน้า'},{v:'credit',l:'📆 เครดิต'}].map(p=>`<option value="${p.v}" ${wo.payment===p.v?'selected':''}>${p.l}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">ช่างผู้ปฏิบัติงาน <span style="font-weight:400;color:var(--muted)">(เลือกได้หลายคน)</span></label>
-          <div id="e-tech-picker" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px;min-height:44px;background:white;cursor:pointer;" onclick="openEditTechPicker()">
-            ${(()=>{
-              const techs = (wo.techs && wo.techs.length) ? wo.techs : (wo.tech ? wo.tech.split(',').map(s=>s.trim()).filter(Boolean) : []);
-              return techs.length
-                ? techs.map(name=>`<span style="background:#EFF6FF;color:#1D4ED8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">👷 ${name}</span>`).join('')
-                : '<span style="color:var(--muted);font-size:13px;">คลิกเพื่อเลือกช่าง...</span>';
-            })()}
-          </div>
-          <input type="hidden" id="e-tech" value="${wo.tech||''}">
+          <label class="form-label">ช่างผู้ปฏิบัติงาน</label>
+          <input type="text" class="form-input" id="e-tech" value="${wo.tech||''}" placeholder="ชื่อช่าง">
         </div>
       </div>
 
@@ -2585,17 +2376,10 @@ function openEditModal(id) {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
           <label class="form-label">ลายเซ็นลูกค้า (ชื่อ)</label>
           <input type="text" class="form-input" id="e-cus-sign" value="${wo.cusSign||''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">⏱️ ระยะเวลาทำงาน (ชม.)</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <input type="number" class="form-input" id="e-work-hours" min="0.5" max="24" step="0.5" value="${wo.workHours||''}" placeholder="เช่น 2.5" style="flex:1;">
-            <span style="font-size:12px;color:var(--muted);white-space:nowrap;">ชม.</span>
-          </div>
         </div>
         <div class="form-group">
           <label class="form-label">หมายเหตุ</label>
@@ -2614,37 +2398,10 @@ function closeEditModal() {
   editingWOId = null;
 }
 
-function deleteWO() {
-  if (!editingWOId) return;
-  const wo = workOrders.find(w => w.id === editingWOId);
-  if (!wo) return;
-  if (!confirm(`ยืนยันลบใบสั่งงาน ${wo.no} (${wo.company}) ?\n\nการลบไม่สามารถกู้คืนได้`)) return;
-  const deletedId  = editingWOId;
-  const deletedIdx = workOrders.findIndex(w => w.id === deletedId);
-  const deletedWO  = { ...wo };
-  workOrders = workOrders.filter(w => w.id !== deletedId);
-  toast(`🗑️ ลบใบสั่งงาน ${wo.no} แล้ว`, 'error');
-  closeEditModal();
-  renderWOList();
-  updateDashboard();
-  apiStart();
-  gsApi.post('deleteWorkOrder', { id: deletedId }).then(res => {
-    if (!res.success) {
-      workOrders.splice(deletedIdx, 0, deletedWO);
-      toast('❌ ลบไม่สำเร็จ: ' + (res.error || ''), 'error');
-      renderWOList(); updateDashboard();
-    }
-  }).catch(() => {
-    workOrders.splice(deletedIdx, 0, deletedWO);
-    toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
-    renderWOList(); updateDashboard();
-  }).finally(() => apiEnd());
-}
-
-function saveEdit() {
+async function saveEdit() {
   if (!editingWOId) return;
   const idx = workOrders.findIndex(w => w.id === editingWOId);
-  if (idx === -1) return;
+  if (idx === -1) { toast('ไม่พบใบสั่งงาน กรุณา reload', 'error'); return; }
 
   const company = document.getElementById('e-company').value.trim();
   const detail = document.getElementById('e-detail').value.trim();
@@ -2658,7 +2415,8 @@ function saveEdit() {
   const getEditChecked = (name) =>
     [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
 
-  Object.assign(workOrders[idx], {
+  const localUpdatedAt = workOrders[idx].updatedAt;
+  const updated = Object.assign({}, workOrders[idx], {
     status: document.getElementById('e-status').value,
     date: document.getElementById('e-date').value,
     apptTime: apptRaw ? apptRaw + ' น.' : '',
@@ -2678,32 +2436,32 @@ function saveEdit() {
     detail,
     payment: document.getElementById('e-payment').value,
     docs: getEditChecked('e-doc'),
-    subtype: getEditChecked('e-subtype'),
     tech: document.getElementById('e-tech').value.trim(),
-    techs: document.getElementById('e-tech').value.trim().split(',').map(s=>s.trim()).filter(Boolean),
-    workHours: parseFloat(document.getElementById('e-work-hours')?.value) || null,
     cusSign: document.getElementById('e-cus-sign').value.trim(),
     remark: document.getElementById('e-remark').value.trim(),
     updatedAt: new Date().toISOString(),
   });
 
-  // อัปเดต currentViewWO ให้ชี้ไปที่ข้อมูลล่าสุด
-  if (currentViewWO && currentViewWO.id === editingWOId) {
-    currentViewWO = workOrders[idx];
+  if (API_URL) {
+    try {
+      // Conflict detection
+      const fresh = await apiFetch('getWorkOrders');
+      const freshRecord = fresh.find(w => w.id === editingWOId);
+      if (freshRecord && freshRecord.updatedAt && freshRecord.updatedAt !== localUpdatedAt) {
+        toast('⚠️ ข้อมูลถูกแก้ไขโดยคนอื่น กรุณา reload เพื่อดูข้อมูลล่าสุด', 'error');
+      }
+      await apiPost({ action: 'saveWorkOrder', data: updated });
+    } catch (err) {
+      toast('⚠️ บันทึกบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error');
+    }
   }
 
-  const savedNo     = workOrders[idx].no;
-  const savedId     = editingWOId;
-  const savedFields = { ...workOrders[idx] };
-  toast(`✅ บันทึกการแก้ไข ${savedNo} เรียบร้อย`, 'success');
+  workOrders[idx] = updated;
+  localStorage.setItem('workOrders', JSON.stringify(workOrders));
+  toast(`✅ บันทึกการแก้ไข ${workOrders[idx].no} เรียบร้อย`, 'success');
   closeEditModal();
   renderWOList();
   updateDashboard();
-  apiStart();
-  gsApi.post('updateWorkOrder', { id: savedId, fields: savedFields }).then(res => {
-    if (!res.success) toast('❌ บันทึกแก้ไขไม่สำเร็จ: ' + (res.error || ''), 'error');
-  }).catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
-    .finally(() => apiEnd());
 }
 
 // ============================
@@ -2717,16 +2475,16 @@ function viewWO(id) {
   document.getElementById('modal-wo-title').textContent = wo.no;
   document.getElementById('modal-wo-sub').textContent = wo.company;
 
-  const payLabel = {cash:'💵 เก็บเงินสด',transfer:'📱 ลูกค้าโอน',prepaid:'✅ ชำระล่วงหน้าแล้ว',credit:'📆 เครดิต',cheque:'🧾 รับเช็ค'};
-  const jobTypeLabel = {repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'💰 งานขาย'};
+  const payLabel = {cash:'💵 เก็บเงินสด',transfer:'📱 ลูกค้าโอน',prepaid:'✅ ชำระล่วงหน้าแล้ว',credit:'📆 เครดิต'};
+  const jobTypeLabel = {repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'✨ งานรถใหม่'};
   const contactCh = {phone:'โทรศัพท์',line:'LINE',fb:'Facebook',email:'E-mail',walkin:'Walk-in',refer:'Referral',other:'อื่นๆ'};
-  const docLabel = {sign:'เซ็นบิล',invoice:'วางบิล',receipt:'ใบเสร็จ',quotation:'ใบเสนอราคา',contract:'เซ็นสัญญา'};
+  const docLabel = {sign:'เซ็นบิล',invoice:'วางบิล',receipt:'ใบเสร็จ',quotation:'ใบเสนอราคา'};
 
   document.getElementById('modal-wo-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div style="background:#F8FAFC;padding:12px;border-radius:8px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">สถานะงาน</div>
-        <select id="modal-status-select" class="form-select" style="border:none;background:none;font-weight:700;font-size:15px;padding:0;" onchange="changeStatus()">
+        <select id="modal-status-select" class="form-select" style="border:none;background:none;font-weight:700;font-size:15px;padding:0;" onchange="">
           <option ${wo.status==='รอดำเนินการ'?'selected':''}>รอดำเนินการ</option>
           <option ${wo.status==='กำลังดำเนินการ'?'selected':''}>กำลังดำเนินการ</option>
           <option ${wo.status==='เสร็จแล้ว'?'selected':''}>เสร็จแล้ว</option>
@@ -2736,7 +2494,6 @@ function viewWO(id) {
       <div style="background:#F8FAFC;padding:12px;border-radius:8px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">ประเภทงาน</div>
         <div style="font-weight:700;">${jobTypeLabel[wo.jobType]||'-'}</div>
-        ${(wo.subtype||[]).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${(wo.subtype||[]).map(s=>`<span style="background:#EFF6FF;color:#2563EB;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${s}</span>`).join('')}</div>` : ''}
       </div>
     </div>
 
@@ -2778,27 +2535,9 @@ function viewWO(id) {
       ${row('💰 การชำระ', payLabel[wo.payment]||wo.payment||'-')}
       ${row('📄 เอกสาร', (wo.docs||[]).map(d=>docLabel[d]||d).join(', ')||'-')}
       ${row('🔧 ช่าง', wo.tech||'-')}
-      ${wo.workHours ? row('⏱️ ระยะเวลาทำงาน', wo.workHours + ' ชั่วโมง') : ''}
       ${row('✍️ ลายเซ็นลูกค้า', wo.cusSign||'-')}
     </div>
     ${wo.remark ? `<div style="margin-top:12px;background:#F8FAFC;padding:12px;border-radius:8px;font-size:13px;color:var(--muted);"><strong>หมายเหตุ:</strong> ${wo.remark}</div>`:''}
-    ${wo.laborCost ? `
-    <div style="margin-top:12px;background:#ECFDF5;border:2px solid #10B981;border-radius:10px;padding:14px 16px;">
-      <div style="font-size:12px;font-weight:700;color:#15803D;margin-bottom:8px;">💰 บันทึกค่าแรง</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:13px;">
-        <div><div style="font-size:10px;color:#6B7280;font-weight:600;">จำนวนชั่วโมง</div><div style="font-weight:700;color:#111827;">${wo.laborHours} ชม.</div></div>
-        <div><div style="font-size:10px;color:#6B7280;font-weight:600;">จำนวนช่าง</div><div style="font-weight:700;color:#111827;">${wo.laborNumTechs} คน</div></div>
-        <div><div style="font-size:10px;color:#6B7280;font-weight:600;">รวมค่าแรง</div><div style="font-weight:900;color:#10B981;font-size:16px;">${Number(wo.laborCost).toLocaleString()} บ.</div></div>
-      </div>
-      ${wo.laborNote ? `<div style="margin-top:8px;font-size:12px;color:#6B7280;border-top:1px solid #A7F3D0;padding-top:8px;">📝 ${wo.laborNote}</div>` : ''}
-      <div style="margin-top:8px;text-align:right;">
-        <button class="btn btn-outline btn-sm" style="font-size:11px;color:#15803D;border-color:#10B981;" onclick="openLaborModal()">✏️ แก้ไขค่าแรง</button>
-      </div>
-    </div>` : (wo.status === 'เสร็จแล้ว' ? `
-    <div style="margin-top:12px;background:#F9FAFB;border:1.5px dashed #D1D5DB;border-radius:10px;padding:12px 16px;text-align:center;">
-      <div style="font-size:13px;color:#6B7280;">ยังไม่ได้บันทึกค่าแรง</div>
-      <button class="btn btn-sm" style="margin-top:8px;background:#10B981;color:white;border:none;font-size:12px;" onclick="openLaborModal()">+ บันทึกค่าแรง</button>
-    </div>` : '')}
     ${(wo.rescheduleHistory||[]).length ? `
     <div style="margin-top:12px;background:#FFFBEB;border:1.5px solid #FDE68A;padding:12px;border-radius:8px;">
       <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px;">📅 ประวัติการย้ายวันนัด (${wo.rescheduleHistory.length} ครั้ง)</div>
@@ -2833,186 +2572,23 @@ function closeModal() {
   document.getElementById('view-modal').classList.remove('open');
 }
 
-function changeStatus() {
+async function changeStatus() {
   if (!currentViewWO) return;
   const newStatus = document.getElementById('modal-status-select').value;
-  if (newStatus === 'เสร็จแล้ว') {
-    openLaborModal();
-    return;
-  }
   const idx = workOrders.findIndex(w => w.id === currentViewWO.id);
   if (idx !== -1) {
-    const prevStatus = workOrders[idx].status;
     workOrders[idx].status = newStatus;
-    currentViewWO = workOrders[idx];
+    workOrders[idx].updatedAt = new Date().toISOString();
+    localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    if (API_URL) {
+      try { await apiPost({ action: 'saveWorkOrder', data: workOrders[idx] }); }
+      catch (err) { toast('⚠️ เปลี่ยนสถานะบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error'); }
+    }
     toast(`🔄 เปลี่ยนสถานะเป็น "${newStatus}"`, 'success');
     closeModal();
     renderWOList();
+    renderDailyPlan();
     updateDashboard();
-    const changedId = workOrders[idx].id;
-    apiStart();
-    gsApi.post('updateWorkOrder', { id: changedId, fields: { status: newStatus } }).then(res => {
-      if (!res.success) {
-        const i = workOrders.findIndex(w => w.id === changedId);
-        if (i !== -1) workOrders[i].status = prevStatus;
-        toast('❌ เปลี่ยนสถานะไม่สำเร็จ: ' + (res.error || ''), 'error');
-        renderWOList(); updateDashboard();
-      }
-    }).catch(() => {
-      const i = workOrders.findIndex(w => w.id === changedId);
-      if (i !== -1) workOrders[i].status = prevStatus;
-      toast('❌ เชื่อมต่อ Server ไม่ได้', 'error');
-      renderWOList(); updateDashboard();
-    }).finally(() => apiEnd());
-  }
-}
-
-// ============================
-// LABOR COST MODAL
-// ============================
-const LABOR_RATE = 250; // บาท/ชม/คน
-
-function onStatusChange(sel) {
-  if (sel.value === 'เสร็จแล้ว') {
-    openLaborModal();
-  }
-}
-
-let selectedLaborTechs = [];
-
-function openLaborModal() {
-  if (!currentViewWO) return;
-  const wo = currentViewWO;
-
-  // โหลดรายชื่อช่างจาก WO (ถ้ามี)
-  selectedLaborTechs = (wo.laborTechs && wo.laborTechs.length) ? [...wo.laborTechs]
-    : (wo.techs && wo.techs.length) ? [...wo.techs]
-    : (wo.tech ? wo.tech.split(',').map(s=>s.trim()).filter(Boolean) : []);
-
-  renderLaborTechsList();
-
-  document.getElementById('labor-wo-sub').textContent = `${wo.no} · ${wo.company}`;
-  document.getElementById('labor-hours').value = wo.laborHours || wo.workHours || '';
-  document.getElementById('labor-note').value  = wo.laborNote  || '';
-  document.getElementById('labor-summary').style.display = 'none';
-  if (wo.laborHours) calcLaborCost();
-
-  document.getElementById('labor-modal').classList.add('open');
-}
-
-function renderLaborTechsList() {
-  const el = document.getElementById('labor-techs-list');
-  if (!el) return;
-  el.innerHTML = selectedLaborTechs.length
-    ? selectedLaborTechs.map(t => `
-        <span style="background:#D1FAE5;color:#065F46;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;">
-          👷 ${t}
-          <span onclick="removeLaborTech('${t.replace(/'/g,"\\'")}');" style="cursor:pointer;color:#6EE7B7;font-size:15px;line-height:1;">×</span>
-        </span>`).join('')
-    : '<span style="color:var(--muted);font-size:13px;">ยังไม่ได้เลือกช่าง — กดปุ่ม "+ เลือก / แก้ไขช่าง"</span>';
-  calcLaborCost();
-}
-
-function removeLaborTech(name) {
-  selectedLaborTechs = selectedLaborTechs.filter(t => t !== name);
-  renderLaborTechsList();
-}
-
-function openLaborTechPicker() {
-  const list = document.getElementById('tech-picker-list');
-  list.innerHTML = technicians.length
-    ? technicians.map(t => `
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:white;${selectedLaborTechs.includes(t.name)?'border-color:var(--accent);':''}" id="ltpick_${t.id}">
-          <input type="checkbox" value="${t.name}" ${selectedLaborTechs.includes(t.name)?'checked':''} onchange="toggleLaborTechCheck(this,'${t.id}')">
-          <div>
-            <div style="font-size:13px;font-weight:700;">${t.name}</div>
-            ${t.nick?`<div style="font-size:11px;color:var(--muted);">${t.nick}</div>`:''}
-          </div>
-        </label>`).join('')
-    : '<div style="text-align:center;color:var(--muted);padding:16px;">ยังไม่มีช่างในระบบ — ไปเพิ่มที่ "จัดการทะเบียนช่าง"</div>';
-  document.getElementById('tech-extra-input').value = '';
-  document.getElementById('tech-picker-modal').dataset.mode = 'labor';
-  // ซ่อน labor modal ชั่วคราว
-  document.getElementById('labor-modal').style.visibility = 'hidden';
-  document.getElementById('tech-picker-modal').classList.add('open');
-}
-
-function toggleLaborTechCheck(cb, id) {
-  const label = document.getElementById('ltpick_' + id);
-  if (label) label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
-}
-
-function calcLaborCost() {
-  const hours    = parseFloat(document.getElementById('labor-hours').value) || 0;
-  const numTechs = selectedLaborTechs.length || 1;
-  if (hours <= 0) { document.getElementById('labor-summary').style.display = 'none'; return; }
-
-  const total     = hours * LABOR_RATE * numTechs;
-  const breakdown = (selectedLaborTechs.length ? selectedLaborTechs : ['(ไม่ระบุช่าง)']).map(t =>
-    `<div style="display:flex;justify-content:space-between;">
-      <span>👷 ${t}</span>
-      <span style="font-weight:700;">${hours} ชม. × ${LABOR_RATE.toLocaleString()} = <strong>${(hours*LABOR_RATE).toLocaleString()}</strong> บ.</span>
-    </div>`).join('');
-
-  document.getElementById('labor-breakdown').innerHTML = breakdown;
-  document.getElementById('labor-total').textContent   = total.toLocaleString() + ' บาท';
-  document.getElementById('labor-summary').style.display = 'block';
-}
-
-function saveLaborCost() {
-  if (!currentViewWO) return;
-  const hours = parseFloat(document.getElementById('labor-hours').value) || 0;
-  if (!hours) { toast('กรุณากรอกจำนวนชั่วโมง', 'error'); return; }
-
-  const numTechs  = selectedLaborTechs.length || 1;
-  const totalCost = hours * LABOR_RATE * numTechs;
-  const idx       = workOrders.findIndex(w => w.id === currentViewWO.id);
-
-  if (idx !== -1) {
-    Object.assign(workOrders[idx], {
-      status:        'เสร็จแล้ว',
-      tech:          selectedLaborTechs.join(', '),
-      techs:         [...selectedLaborTechs],
-      laborTechs:    [...selectedLaborTechs],
-      laborHours:    hours,
-      laborNumTechs: numTechs,
-      laborCost:     totalCost,
-      laborNote:     document.getElementById('labor-note').value.trim(),
-      laborSavedAt:  new Date().toISOString(),
-    });
-    currentViewWO = workOrders[idx];
-    const laborId     = workOrders[idx].id;
-    const laborFields = { ...workOrders[idx] };
-    toast(`✅ บันทึกค่าแรง ${totalCost.toLocaleString()} บาท เรียบร้อย`, 'success');
-    document.getElementById('labor-modal').classList.remove('open');
-    closeModal();
-    renderWOList();
-    updateDashboard();
-    apiStart();
-    gsApi.post('updateWorkOrder', { id: laborId, fields: laborFields })
-      .then(res => { if (!res.success) toast('❌ บันทึกค่าแรงไม่สำเร็จ: ' + (res.error || ''), 'error'); })
-      .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
-      .finally(() => apiEnd());
-  }
-}
-
-function saveLaborSkip() {
-  if (!currentViewWO) return;
-  const idx = workOrders.findIndex(w => w.id === currentViewWO.id);
-  if (idx !== -1) {
-    workOrders[idx].status = 'เสร็จแล้ว';
-    currentViewWO = workOrders[idx];
-    const skipId = workOrders[idx].id;
-    toast('✅ บันทึกสถานะเสร็จแล้ว', 'success');
-    document.getElementById('labor-modal').classList.remove('open');
-    closeModal();
-    renderWOList();
-    updateDashboard();
-    apiStart();
-    gsApi.post('updateWorkOrder', { id: skipId, fields: { status: 'เสร็จแล้ว' } })
-      .then(res => { if (!res.success) toast('❌ บันทึกสถานะไม่สำเร็จ: ' + (res.error || ''), 'error'); })
-      .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
-      .finally(() => apiEnd());
   }
 }
 
@@ -3035,14 +2611,15 @@ function printWO() {
 }
 
 function loadWOIntoForm(wo) {
-  // Reset first
-  clearForm();
+  formEditingId = wo.id; // mark as editing existing WO
+  // Reset first (don't clear draft — we're loading an existing WO, not a new form)
+  clearForm(false);
   updateWONumber();
   // Override WO number display
   document.getElementById('wo-number-display').textContent = wo.no;
 
   if (wo.jobType) {
-    const jtMap = {repair:'jt-repair', rental:'jt-rental', newcar:'jt-newcar', other:'jt-other'};
+    const jtMap = {repair:'jt-repair', rental:'jt-rental', newcar:'jt-newcar'};
     const card = document.getElementById(jtMap[wo.jobType]);
     if (card) { card.classList.add('selected'); card.querySelector('input').checked = true; }
   }
@@ -3061,9 +2638,8 @@ function loadWOIntoForm(wo) {
   set('f-serial', wo.serial);
   set('f-detail', wo.detail);
   set('f-date', wo.date);
+  set('f-time', wo.time);
   set('f-tech', wo.tech);
-  const whEl = document.getElementById('f-work-hours');
-  if (whEl) whEl.value = wo.workHours || '';
   set('f-cus-sign', wo.cusSign);
   set('f-remark', wo.remark);
 
@@ -3095,53 +2671,29 @@ function loadWOIntoForm(wo) {
 let currentDateKey = todayKey();
 let planJtFilter = '';
 
-const JT_LABEL = { repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'💰 งานขาย', other:'📦 งานอื่นๆ' };
+const JT_LABEL = { repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'✨ งานรถใหม่' };
 const JT_COLOR = {
   repair: { bg:'#FEF2F2', border:'#DC2626', text:'#DC2626', badge:'background:#FEF2F2;color:#DC2626' },
   rental: { bg:'#EFF6FF', border:'#2563EB', text:'#2563EB', badge:'background:#EFF6FF;color:#2563EB' },
   newcar: { bg:'#ECFDF5', border:'#059669', text:'#059669', badge:'background:#ECFDF5;color:#059669' },
-  other:  { bg:'#FEFCE8', border:'#CA8A04', text:'#854D0E', badge:'background:#FEFCE8;color:#854D0E' },
 };
-// Sort order for WO list grouping by job type
-const JT_ORDER = { repair:1, rental:2, newcar:3, other:4 };
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
-// Normalize any date format to YYYY-MM-DD (handles Google Sheets "Wed Mar 18 2026..." format)
-function normalizeDate(d) {
-  if (!d) return d;
-  if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d;
-  const p = _parseDateParts(d);
-  if (!p) return d;
-  return `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
-}
-
-function _parseDateParts(d) {
-  // Handles YYYY-MM-DD and Date.toString() from Apps Script (e.g. "Wed Mar 18 2026 00:00:00 GMT+0700")
-  if (!d) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
-    const p = d.split('-');
-    return { y: parseInt(p[0]), m: parseInt(p[1]), day: parseInt(p[2]) };
-  }
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return null;
-  return { y: dt.getFullYear(), m: dt.getMonth() + 1, day: dt.getDate() };
-}
-
 function formatDate(d) {
-  const p = _parseDateParts(d);
-  if (!p) return '-';
+  if (!d) return '-';
+  const [y,m,day] = d.split('-');
   const months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${p.day} ${months[p.m]} ${p.y+543}`;
+  return `${parseInt(day)} ${months[parseInt(m)]} ${parseInt(y)+543}`;
 }
 
 function formatDateLong(d) {
-  const p = _parseDateParts(d);
-  if (!p) return '-';
+  if (!d) return '-';
+  const [y,m,day] = d.split('-');
   const months = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-  const dow = new Date(p.y, p.m - 1, p.day).getDay();
-  return `วัน${days[dow]}ที่ ${p.day} ${months[p.m]} พ.ศ. ${p.y+543}`;
+  const dow = new Date(d).getDay();
+  return `วัน${days[dow]}ที่ ${parseInt(day)} ${months[parseInt(m)]} พ.ศ. ${parseInt(y)+543}`;
 }
 
 function switchPlanTab(tab) {
@@ -3149,19 +2701,7 @@ function switchPlanTab(tab) {
   document.getElementById('plan-tab-report').style.display = tab==='report' ? '' : 'none';
   document.getElementById('tab-btn-daily').classList.toggle('active',  tab==='daily');
   document.getElementById('tab-btn-report').classList.toggle('active', tab==='report');
-  if (tab==='report') {
-    const fromEl = document.getElementById('rpt-date-from');
-    const toEl   = document.getElementById('rpt-date-to');
-    if (!fromEl.value || !toEl.value) {
-      const now = new Date();
-      const y   = now.getFullYear();
-      const m   = String(now.getMonth()+1).padStart(2,'0');
-      fromEl.value = `${y}-${m}-01`;
-      toEl.value   = now.toISOString().split('T')[0];
-    }
-    // ให้ browser render ก่อนแล้วค่อย renderReport
-    setTimeout(() => renderReport(), 0);
-  }
+  if (tab==='report') renderReport();
 }
 
 function setJtFilter(btn, jt) {
@@ -3320,7 +2860,7 @@ function toggleRschOther(sel) {
   document.getElementById('rsch-other-wrap').style.display = sel.value === 'other' ? '' : 'none';
 }
 
-function saveReschedule() {
+async function saveReschedule() {
   const newDate   = document.getElementById('rsch-new-date').value;
   const reasonSel = document.getElementById('rsch-reason').value;
   const reasonTxt = document.getElementById('rsch-other-text').value.trim();
@@ -3353,18 +2893,18 @@ function saveReschedule() {
   if (newTime) wo.apptTime = newTime + ' น.';
   wo.updatedAt = new Date().toISOString();
 
-  const rschId     = wo.id;
-  const rschFields = { ...wo };
+  localStorage.setItem('workOrders', JSON.stringify(workOrders));
+
+  if (API_URL) {
+    try { await apiPost({ action: 'saveWorkOrder', data: wo }); }
+    catch (err) { toast('⚠️ ย้ายวันนัดบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error'); }
+  }
+
   toast(`📅 ย้ายวันนัด ${wo.no} → ${formatDate(newDate)} เรียบร้อย`, 'success');
   closeRescheduleModal();
   renderDailyPlan();
   renderWOList();
   updateDashboard();
-  apiStart();
-  gsApi.post('updateWorkOrder', { id: rschId, fields: rschFields })
-    .then(res => { if (!res.success) toast('❌ บันทึกย้ายวันไม่สำเร็จ: ' + (res.error || ''), 'error'); })
-    .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
-    .finally(() => apiEnd());
 }
 
 // ============================
@@ -3383,14 +2923,12 @@ function setRptRange(range) {
 }
 
 function renderReport() {
-  const from    = document.getElementById('rpt-date-from')?.value || '';
-  const to      = document.getElementById('rpt-date-to')?.value || '';
+  const from    = document.getElementById('rpt-date-from').value;
+  const to      = document.getElementById('rpt-date-to').value;
   const jtF     = document.getElementById('rpt-jt-filter')?.value || '';
   const statusF = document.getElementById('rpt-status-filter')?.value || '';
   const searchQ = (document.getElementById('rpt-search')?.value || '').toLowerCase().trim();
   const el      = document.getElementById('rpt-content');
-
-  if (!el) return;
 
   if (!from || !to) {
     el.innerHTML = '<div style="color:var(--muted);padding:20px;">กรุณาเลือกช่วงวันที่</div>';
@@ -3407,7 +2945,6 @@ function renderReport() {
     repair: wos.filter(w=>w.jobType==='repair').length,
     rental: wos.filter(w=>w.jobType==='rental').length,
     newcar: wos.filter(w=>w.jobType==='newcar').length,
-    other:  wos.filter(w=>w.jobType==='other').length,
   };
 
   // Apply detail filters
@@ -3421,201 +2958,20 @@ function renderReport() {
   );
   wos = [...wos].sort((a,b) => a.date < b.date ? -1 : 1);
 
-  // allWOsInRange — ต้องประกาศก่อนใช้
-  const allWOsInRange = workOrders.filter(w => w.date >= from && w.date <= to);
-
   // ── KPI cards ──────────────────────────────────────────
-  const totalLabor = allWOsInRange.filter(w=>w.laborCost).reduce((s,w)=>s+(w.laborCost||0),0);
-  const laborCount = allWOsInRange.filter(w=>w.laborCost).length;
-
   const kpi = (label, val, sub, color) =>
     `<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:14px 18px;border-top:4px solid ${color};">
       <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.3px;">${label}</div>
       <div style="font-size:26px;font-weight:800;color:${color};margin:4px 0;">${val}</div>
       <div style="font-size:11px;color:var(--muted);">${sub}</div>
     </div>`;
-  const kpiRow = `
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+  const kpiRow = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
     ${kpi('ใบสั่งงานทั้งหมด', total, `${formatDate(from)} – ${formatDate(to)}`, 'var(--primary)')}
     ${kpi('✅ เสร็จแล้ว', done, `${total?Math.round(done/total*100):0}% ของทั้งหมด`, '#10B981')}
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
     ${kpi('🔧 งานซ่อม', byJT.repair, `${total?Math.round(byJT.repair/total*100):0}%`, '#DC2626')}
     ${kpi('🚜 งานรถเช่า', byJT.rental, `${total?Math.round(byJT.rental/total*100):0}%`, '#2563EB')}
-    ${kpi('💰 งานขาย', byJT.newcar, `${total?Math.round(byJT.newcar/total*100):0}%`, '#059669')}
-    ${kpi('📦 งานอื่นๆ', byJT.other, `${total?Math.round(byJT.other/total*100):0}%`, '#CA8A04')}
-  </div>
-  <div style="margin-bottom:16px;">
-    <div style="background:white;border-radius:12px;border:2px solid #10B981;padding:14px 18px;border-top:4px solid #10B981;">
-      <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.3px;">💵 ค่าแรงรวม</div>
-      <div style="font-size:26px;font-weight:900;color:#10B981;margin:4px 0;">${totalLabor.toLocaleString()} บาท</div>
-      <div style="font-size:11px;color:var(--muted);">จาก ${laborCount} งานที่บันทึกค่าแรง</div>
-    </div>
+    ${kpi('✨ งานรถใหม่', byJT.newcar, `${total?Math.round(byJT.newcar/total*100):0}%`, '#059669')}
   </div>`;
-
-  // ── Labor summary by technician ────────────────────────
-  const laborWOs = allWOsInRange.filter(w => w.laborCost);
-  // collect per-tech labor
-  const techLaborMap = {};
-  laborWOs.forEach(wo => {
-    const techs = (wo.techs && wo.techs.length) ? wo.techs
-      : (wo.tech ? wo.tech.split(',').map(s=>s.trim()).filter(Boolean) : ['(ไม่ระบุ)']);
-    const perPerson = (wo.laborCost||0) / (techs.length||1);
-    const hrs = (wo.laborHours||0);
-    techs.forEach(t => {
-      if (!techLaborMap[t]) techLaborMap[t] = { jobs:0, hours:0, cost:0 };
-      techLaborMap[t].jobs++;
-      techLaborMap[t].hours += hrs;
-      techLaborMap[t].cost  += perPerson;
-    });
-  });
-
-  const laborTechRows = Object.entries(techLaborMap)
-    .sort((a,b) => b[1].cost - a[1].cost)
-    .map(([name, d], i) => `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:9px 14px;font-weight:700;">${i+1}. ${name}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:600;color:var(--primary);">${d.jobs}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:600;color:#6B7280;">${d.hours.toFixed(1)} ชม.</td>
-        <td style="padding:9px 14px;text-align:right;font-weight:800;color:#10B981;font-size:14px;">${d.cost.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})} บ.</td>
-      </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted);">ยังไม่มีการบันทึกค่าแรงในช่วงนี้</td></tr>`;
-
-  const laborTable = `
-    <div style="background:white;border-radius:12px;border:1.5px solid #A7F3D0;overflow:hidden;margin-bottom:16px;">
-      <div style="padding:12px 18px;font-weight:700;font-size:14px;border-bottom:1px solid #D1FAE5;background:#ECFDF5;display:flex;align-items:center;justify-content:space-between;">
-        <span>💵 สรุปค่าแรงรายช่าง</span>
-        <span style="font-size:13px;font-weight:800;color:#10B981;">${totalLabor.toLocaleString()} บาท</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr style="background:#10B981;color:white;">
-          <th style="padding:9px 14px;text-align:left;font-size:11px;">ชื่อช่าง</th>
-          <th style="padding:9px 14px;font-size:11px;text-align:center;">จำนวนงาน</th>
-          <th style="padding:9px 14px;font-size:11px;text-align:center;">ชั่วโมงรวม</th>
-          <th style="padding:9px 14px;font-size:11px;text-align:right;">ค่าแรงรวม</th>
-        </tr></thead>
-        <tbody>${laborTechRows}</tbody>
-        ${Object.keys(techLaborMap).length ? `
-        <tfoot><tr style="background:#F0FDF4;border-top:2px solid #10B981;">
-          <td style="padding:9px 14px;font-weight:800;">รวมทั้งหมด</td>
-          <td style="padding:9px 14px;text-align:center;font-weight:700;">${laborWOs.length} งาน</td>
-          <td style="padding:9px 14px;text-align:center;font-weight:700;">${laborWOs.reduce((s,w)=>s+(w.laborHours||0),0).toFixed(1)} ชม.</td>
-          <td style="padding:9px 14px;text-align:right;font-weight:900;color:#10B981;font-size:15px;">${totalLabor.toLocaleString()} บ.</td>
-        </tr></tfoot>` : ''}
-      </table>
-    </div>`;
-
-  // ── MERGED: สรุปประเภทงาน + ค่าแรง รวมในตารางเดียว ──────
-  const jtCfgAll = [
-    { jt:'repair', label:'🔧 งานซ่อม',   color:'#DC2626', light:'#FEF2F2', border:'#FECACA',
-      opts:['PM ลูกค้าประจำเดือน','ตรวจเช็ค','ถอด-ประกอบอะไหล่','ซื้อ-รับอะไหล่','ยกรถกลับมาซ่อม-ส่งคืนรถซ่อม','เซ็นบิล+วางบิล','งานเคลม/แก้ไขลูกค้าซ่อม','งานในบริษัท'] },
-    { jt:'rental', label:'🚜 งานรถเช่า', color:'#2563EB', light:'#EFF6FF', border:'#BFDBFE',
-      opts:['ตรวจเช็ค','ซ่อม-ประกอบอะไหล่','เซอร์วิสประจำเดือนรถเช่า','ซื้อ-รับอะไหล่','เซ็นบิล+วางบิล','งานในบริษัท'] },
-    { jt:'newcar', label:'💰 งานขาย',    color:'#059669', light:'#ECFDF5', border:'#A7F3D0',
-      opts:['ส่ง-รับรถใหม่','ตรวจเช็ค','เซอร์วิสรถใหม่','งานเคลมรถใหม่','เซ็นบิล+วางบิล+รับเช็ค','งานในบริษัท'] },
-    { jt:'other',  label:'📦 งานอื่นๆ',  color:'#CA8A04', light:'#FEFCE8', border:'#FDE68A', opts:[] },
-  ];
-
-  const mergedBlocks = jtCfgAll.map(({ jt, label, color, light, border, opts }) => {
-    const jtAllWOs   = allWOsInRange.filter(w => w.jobType === jt);
-    const jtTotal    = jtAllWOs.length;
-    if (!jtTotal) return '';
-
-    const jtLaborWOs = jtAllWOs.filter(w => w.laborCost);
-    const jtLaborSum = jtLaborWOs.reduce((s,w) => s+(w.laborCost||0), 0);
-    const jtHours    = jtLaborWOs.reduce((s,w) => s+(w.laborHours||0), 0);
-    const jtDone     = jtAllWOs.filter(w => w.status==='เสร็จแล้ว').length;
-
-    // รวม subtype counts + labor
-    const subMap = {};
-    // นับจำนวนงานต่อ subtype (ทุกงาน)
-    jtAllWOs.forEach(wo => {
-      const subs = (wo.subtype||[]).length ? wo.subtype : ['(ไม่ระบุหัวข้อย่อย)'];
-      subs.forEach(s => {
-        if (!subMap[s]) subMap[s] = { count:0, done:0, labor:0, hours:0 };
-        subMap[s].count++;
-        if (wo.status==='เสร็จแล้ว') subMap[s].done++;
-      });
-    });
-    // นับค่าแรงต่อ subtype (เฉพาะงานที่บันทึกค่าแรง)
-    jtLaborWOs.forEach(wo => {
-      const subs = (wo.subtype||[]).length ? wo.subtype : ['(ไม่ระบุหัวข้อย่อย)'];
-      const laborPerSub = (wo.laborCost||0) / subs.length;
-      const hrsPerSub   = (wo.laborHours||0) / subs.length;
-      subs.forEach(s => {
-        if (!subMap[s]) subMap[s] = { count:0, done:0, labor:0, hours:0 };
-        subMap[s].labor += laborPerSub;
-        subMap[s].hours += hrsPerSub;
-      });
-    });
-
-    // เรียงตาม opts ก่อน แล้วตามด้วยที่ไม่อยู่ใน opts
-    const sortedSubs = [
-      ...opts.filter(o => subMap[o]),
-      ...Object.keys(subMap).filter(k => !opts.includes(k))
-    ];
-
-    const maxCount = Math.max(...Object.values(subMap).map(v=>v.count), 1);
-
-    const subRows = sortedSubs.map(name => {
-      const v = subMap[name];
-      const barW = Math.round(v.count / maxCount * 100);
-      return `
-        <tr style="border-bottom:1px solid ${border};">
-          <td style="padding:6px 12px;font-size:12px;font-weight:600;color:#374151;">${name}</td>
-          <td style="padding:6px 8px;">
-            <div style="display:flex;align-items:center;gap:5px;">
-              <div style="background:#E5E7EB;border-radius:3px;height:7px;width:70px;overflow:hidden;display:inline-block;flex-shrink:0;">
-                <div style="height:7px;background:${color};border-radius:3px;width:${barW}%;"></div>
-              </div>
-              <span style="font-size:10px;color:#6B7280;font-weight:600;white-space:nowrap;">${Math.round(v.count/jtTotal*100)}%</span>
-            </div>
-          </td>
-          <td style="padding:6px 8px;text-align:center;font-size:13px;font-weight:700;color:${color};">${v.count}</td>
-          <td style="padding:6px 8px;text-align:center;font-size:11px;color:#6B7280;">${v.done}</td>
-          <td style="padding:6px 8px;text-align:center;font-size:11px;color:#6B7280;">${v.hours>0?v.hours.toFixed(1)+' ชม.':'-'}</td>
-          <td style="padding:6px 12px;text-align:right;font-size:13px;font-weight:800;color:${v.labor>0?'#10B981':'#9CA3AF'};">
-            ${v.labor>0 ? Math.round(v.labor).toLocaleString()+' บ.' : '-'}
-          </td>
-        </tr>`;
-    }).join('');
-
-    return `
-      <div style="background:white;border:1.5px solid ${border};border-radius:10px;overflow:hidden;">
-        <!-- header -->
-        <div style="background:${color};padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="color:white;">
-            <div style="font-size:14px;font-weight:800;">${label}</div>
-            <div style="font-size:11px;opacity:.8;margin-top:2px;">${jtTotal} งาน · เสร็จ ${jtDone} · ${jtHours.toFixed(1)} ชม.</div>
-          </div>
-          <div style="text-align:right;color:white;">
-            <div style="font-size:11px;opacity:.8;">ค่าแรงรวม</div>
-            <div style="font-size:18px;font-weight:900;">${jtLaborSum>0?Math.round(jtLaborSum).toLocaleString()+' บ.':'-'}</div>
-          </div>
-        </div>
-        <!-- table -->
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:${light};">
-              <th style="padding:6px 12px;text-align:left;font-size:10px;font-weight:700;color:${color};">หัวข้อย่อย</th>
-              <th style="padding:6px 8px;font-size:10px;font-weight:700;color:${color};"></th>
-              <th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;color:${color};">งาน</th>
-              <th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;color:${color};">เสร็จ</th>
-              <th style="padding:6px 8px;text-align:center;font-size:10px;font-weight:700;color:${color};">ชม.</th>
-              <th style="padding:6px 12px;text-align:right;font-size:10px;font-weight:700;color:${color};">ค่าแรง</th>
-            </tr>
-          </thead>
-          <tbody>${subRows || `<tr><td colspan="6" style="padding:10px 12px;font-size:12px;color:#9CA3AF;">ยังไม่มีการระบุหัวข้อย่อย</td></tr>`}</tbody>
-        </table>
-      </div>`;
-  }).filter(Boolean).join('');
-
-  const mergedSection = mergedBlocks ? `
-    <div style="margin-bottom:16px;">
-      <div style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:10px;">📊 สรุปประเภทงาน · หัวข้อย่อย · ค่าแรง</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;">
-        ${mergedBlocks}
-      </div>
-    </div>` : '';
 
   // ── Tech summary mini bar ──────────────────────────────
   const techs = [...new Set(workOrders.filter(w=>w.date>=from&&w.date<=to).map(w=>w.tech||'(ไม่ระบุ)'))].sort();
@@ -3653,9 +3009,9 @@ function renderReport() {
     </div>`;
 
   // ── WO detail list (like WO list page) ────────────────
-  const jtLbl = {repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'💰 งานขาย'};
+  const jtLbl = {repair:'🔧 งานซ่อม', rental:'🚜 งานรถเช่า', newcar:'✨ งานรถใหม่'};
   const jtCol = {repair:'#DC2626', rental:'#2563EB', newcar:'#059669'};
-  const payLbl = {cash:'💵 สด', transfer:'📱 โอน', prepaid:'✅ ล่วงหน้า', credit:'📆 เครดิต', cheque:'🧾 เช็ค'};
+  const payLbl = {cash:'💵 สด', transfer:'📱 โอน', prepaid:'✅ ล่วงหน้า', credit:'📆 เครดิต'};
   const statusBadge = s => {
     if (s==='รอดำเนินการ') return '<span class="status-badge badge-pending" style="font-size:11px;">รอ</span>';
     if (s==='กำลังดำเนินการ') return '<span class="status-badge badge-progress" style="font-size:11px;">กำลังทำ</span>';
@@ -3673,7 +3029,6 @@ function renderReport() {
       <td style="padding:9px 12px;font-size:12px;">${wo.jobType&&jtLbl[wo.jobType]?`<span style="font-weight:700;color:${jtCol[wo.jobType]};">${jtLbl[wo.jobType]}</span>`:'-'}</td>
       <td style="padding:9px 12px;font-size:12px;color:#475569;max-width:220px;">${wo.detail?`<span title="${wo.detail.replace(/"/g,'&quot;')}">${wo.detail.substring(0,70)}${wo.detail.length>70?'…':''}</span>`:'<span style="color:#ccc">-</span>'}</td>
       <td style="padding:9px 12px;font-size:12px;">${payLbl[wo.payment]||wo.payment||'-'}</td>
-      <td style="padding:9px 12px;font-weight:700;color:#10B981;font-size:12px;">${wo.laborCost ? Number(wo.laborCost).toLocaleString()+' บ.' : '<span style="color:#ccc">-</span>'}</td>
       <td style="padding:9px 12px;">${statusBadge(wo.status)}</td>
     </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);">ไม่พบรายการที่ตรงเงื่อนไข</td></tr>`;
 
@@ -3690,8 +3045,7 @@ function renderReport() {
           <option value="">ทุกประเภทงาน</option>
           <option value="repair">🔧 งานซ่อม</option>
           <option value="rental">🚜 งานรถเช่า</option>
-          <option value="newcar">💰 งานขาย</option>
-          <option value="other">📦 งานอื่นๆ</option>
+          <option value="newcar">✨ งานรถใหม่</option>
         </select>
         <select id="rpt-status-filter" class="filter-select" style="font-size:12px;" onchange="renderReport()">
           <option value="">ทุกสถานะ</option>
@@ -3711,7 +3065,6 @@ function renderReport() {
             <th style="padding:9px 12px;text-align:left;font-size:11px;">ประเภทงาน</th>
             <th style="padding:9px 12px;text-align:left;font-size:11px;min-width:180px;">รายละเอียดงาน</th>
             <th style="padding:9px 12px;text-align:left;font-size:11px;">การชำระ</th>
-            <th style="padding:9px 12px;text-align:left;font-size:11px;">ค่าแรง</th>
             <th style="padding:9px 12px;text-align:left;font-size:11px;">สถานะ</th>
           </tr></thead>
           <tbody>${woRows}</tbody>
@@ -3724,7 +3077,7 @@ function renderReport() {
   window._rptFrom = from;
   window._rptTo = to;
 
-  el.innerHTML = kpiRow + mergedSection + laborTable + techTable + woTable;
+  el.innerHTML = kpiRow + techTable + woTable;
 
   // Restore filter values after re-render
   if (jtF)     { const s=document.getElementById('rpt-jt-filter');     if(s) s.value=jtF; }
@@ -3736,8 +3089,8 @@ function exportCSV() {
   const wos  = window._rptWOs || [];
   const from = window._rptFrom || '';
   const to   = window._rptTo   || '';
-  const jtLbl = {repair:'งานซ่อม', rental:'งานรถเช่า', newcar:'งานขาย'};
-  const payLbl = {cash:'เงินสด', transfer:'โอน', prepaid:'ล่วงหน้า', credit:'เครดิต', cheque:'รับเช็ค'};
+  const jtLbl = {repair:'งานซ่อม', rental:'งานรถเช่า', newcar:'งานรถใหม่'};
+  const payLbl = {cash:'เงินสด', transfer:'โอน', prepaid:'ล่วงหน้า', credit:'เครดิต'};
 
   const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
 
@@ -3850,222 +3203,6 @@ function toast(msg, type='') {
   el.textContent = msg;
   tc.appendChild(el);
   setTimeout(() => el.remove(), 3000);
-}
-
-// ============================
-// TECHNICIAN MANAGEMENT
-// ============================
-
-
-function openEditTechPicker() {
-  // Re-use tech-picker-modal but set mode to 'edit'
-  selectedEditTechs = (document.getElementById('e-tech')?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const list = document.getElementById('tech-picker-list');
-  list.innerHTML = technicians.length
-    ? technicians.map(t => `
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:white;" id="etpick_${t.id}">
-          <input type="checkbox" value="${t.name}" ${selectedEditTechs.includes(t.name)?'checked':''} onchange="toggleEditTechCheck(this,'${t.id}')">
-          <div>
-            <div style="font-size:13px;font-weight:700;">${t.name}</div>
-            ${t.nick?`<div style="font-size:11px;color:var(--muted);">${t.nick}</div>`:''}
-          </div>
-        </label>`).join('')
-    : '<div style="text-align:center;color:var(--muted);padding:16px;">ยังไม่มีช่างในระบบ</div>';
-  document.getElementById('tech-extra-input').value = '';
-  // Override confirm button for edit mode
-  document.getElementById('tech-picker-modal').dataset.mode = 'edit';
-  document.getElementById('tech-picker-modal').classList.add('open');
-}
-
-function toggleEditTechCheck(cb, id) {
-  const label = document.getElementById('etpick_' + id);
-  if (label) label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
-}
-
-function confirmTechPicker() {
-  const mode = document.getElementById('tech-picker-modal').dataset.mode;
-  const checked = [...document.querySelectorAll('#tech-picker-list input[type=checkbox]:checked')].map(c => c.value);
-  const extra = document.getElementById('tech-extra-input').value.trim();
-  const result = [...new Set([...checked, ...(extra ? [extra] : [])])];
-
-  if (mode === 'labor') {
-    selectedLaborTechs = result;
-    renderLaborTechsList();
-  } else if (mode === 'edit') {
-    selectedEditTechs = result;
-    // Update e-tech hidden + picker display
-    const picker = document.getElementById('e-tech-picker');
-    const hiddenInput = document.getElementById('e-tech');
-    if (hiddenInput) hiddenInput.value = result.join(', ');
-    if (picker) picker.innerHTML = result.length
-      ? result.map(name=>`<span style="background:#EFF6FF;color:#1D4ED8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">👷 ${name}</span>`).join('')
-      + `<span onclick="openEditTechPicker()" style="color:var(--accent);font-size:12px;cursor:pointer;padding:4px 6px;">+ แก้ไข</span>`
-      : '<span style="color:var(--muted);font-size:13px;">คลิกเพื่อเลือกช่าง...</span>';
-  } else {
-    selectedTechs = result;
-    renderTechPickerTags();
-  }
-  closeTechPickerModal();
-} // array of names selected in picker
-
-function saveTechniciansList(action, payload) {
-  // action: 'createTechnician' | 'updateTechnician' | 'deleteTechnician'
-  if (!action) return;
-  apiStart();
-  gsApi.post(action, payload)
-    .then(res => { if (!res.success) toast('❌ บันทึกข้อมูลช่างไม่สำเร็จ: ' + (res.error || ''), 'error'); })
-    .catch(() => toast('❌ เชื่อมต่อ Server ไม่ได้', 'error'))
-    .finally(() => apiEnd());
-}
-
-function renderTechList() {
-  const tbody = document.getElementById('tech-list-body');
-  if (!tbody) return;
-  if (!technicians.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">ยังไม่มีรายชื่อช่าง — กดปุ่ม "+ เพิ่มช่าง"</td></tr>';
-    return;
-  }
-  tbody.innerHTML = technicians.map((t,i) => `
-    <tr>
-      <td style="text-align:center;color:var(--muted);font-size:12px;">${i+1}</td>
-      <td><strong>${t.name}</strong></td>
-      <td style="color:var(--muted);font-size:13px;">${t.nick||'–'}</td>
-      <td style="font-size:13px;">${t.phone||'–'}</td>
-      <td style="text-align:center;white-space:nowrap;">
-        <button class="btn btn-outline btn-sm" onclick="openEditTechnicianModal('${t.id}')">✏️</button>
-        <button class="btn btn-sm" style="margin-left:4px;background:#FEE2E2;color:#DC2626;border:1px solid #FCA5A5;" onclick="deleteTechnician('${t.id}')">🗑️</button>
-      </td>
-    </tr>`).join('');
-}
-
-function openAddTechnicianModal() {
-  editingTechId = null;
-  document.getElementById('tech-modal-title').textContent = '+ เพิ่มช่าง';
-  document.getElementById('tm-name').value = '';
-  document.getElementById('tm-nick').value = '';
-  document.getElementById('tm-phone').value = '';
-  document.getElementById('tech-manage-modal').classList.add('open');
-}
-
-function openEditTechnicianModal(id) {
-  const t = technicians.find(x => x.id === id);
-  if (!t) return;
-  editingTechId = id;
-  document.getElementById('tech-modal-title').textContent = '✏️ แก้ไขข้อมูลช่าง';
-  document.getElementById('tm-name').value = t.name;
-  document.getElementById('tm-nick').value = t.nick || '';
-  document.getElementById('tm-phone').value = t.phone || '';
-  document.getElementById('tech-manage-modal').classList.add('open');
-}
-
-function closeTechManageModal() {
-  document.getElementById('tech-manage-modal').classList.remove('open');
-}
-
-function saveTechnician() {
-  const name = document.getElementById('tm-name').value.trim();
-  if (!name) { toast('กรุณากรอกชื่อช่าง', 'error'); return; }
-  const nick  = document.getElementById('tm-nick').value.trim();
-  const phone = document.getElementById('tm-phone').value.trim();
-  if (editingTechId) {
-    const idx = technicians.findIndex(x => x.id === editingTechId);
-    if (idx > -1) Object.assign(technicians[idx], { name, nick, phone });
-    toast('✅ อัปเดตข้อมูลช่างแล้ว', 'success');
-    saveTechniciansList('updateTechnician', { id: editingTechId, fields: { name, nick, phone } });
-  } else {
-    const newTech = { id: 'tech_' + Date.now(), name, nick, phone };
-    technicians.push(newTech);
-    toast('✅ เพิ่มช่างแล้ว', 'success');
-    saveTechniciansList('createTechnician', { tech: newTech });
-  }
-  closeTechManageModal();
-  renderTechList();
-}
-
-function deleteTechnician(id) {
-  const t = technicians.find(x => x.id === id);
-  if (!t) return;
-  if (!confirm(`ลบ "${t.name}" ออกจากทะเบียนช่าง?`)) return;
-  const deletedTech    = { ...t };
-  const deletedTechIdx = technicians.findIndex(x => x.id === id);
-  technicians = technicians.filter(x => x.id !== id);
-  renderTechList();
-  toast(`🗑️ ลบ ${t.name} แล้ว`, 'error');
-  saveTechniciansList('deleteTechnician', { id });
-
-}
-
-// ============================
-// TECH PICKER (multi-select)
-// ============================
-function openTechPicker() {
-  const list = document.getElementById('tech-picker-list');
-  list.innerHTML = technicians.length
-    ? technicians.map(t => `
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:white;" id="tpick_${t.id}">
-          <input type="checkbox" value="${t.name}" ${selectedTechs.includes(t.name)?'checked':''} onchange="toggleTechCheck(this,'${t.id}')">
-          <div>
-            <div style="font-size:13px;font-weight:700;">${t.name}</div>
-            ${t.nick?`<div style="font-size:11px;color:var(--muted);">${t.nick}</div>`:''}
-          </div>
-        </label>`).join('')
-    : '<div style="text-align:center;color:var(--muted);padding:16px;">ยังไม่มีช่างในระบบ — ไปเพิ่มที่ "จัดการทะเบียนช่าง"</div>';
-  document.getElementById('tech-extra-input').value = '';
-  document.getElementById('tech-picker-modal').classList.add('open');
-}
-
-function toggleTechCheck(cb, id) {
-  const label = document.getElementById('tpick_' + id);
-  if (label) label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
-}
-
-function addExtraTech() {
-  const inp = document.getElementById('tech-extra-input');
-  const name = inp.value.trim();
-  if (!name) return;
-  if (!selectedTechs.includes(name)) selectedTechs.push(name);
-  inp.value = '';
-  toast(`เพิ่ม "${name}" แล้ว`, 'success');
-}
-
-function closeTechPickerModal() {
-  document.getElementById('tech-picker-modal').classList.remove('open');
-  // คืน labor modal ถ้าซ่อนอยู่
-  const laborModal = document.getElementById('labor-modal');
-  if (laborModal) laborModal.style.visibility = '';
-}
-
-function renderTechPickerTags() {
-  const picker = document.getElementById('tech-picker');
-  const placeholder = document.getElementById('tech-picker-placeholder');
-  if (!selectedTechs.length) {
-    picker.innerHTML = '<span id="tech-picker-placeholder" style="color:var(--muted);font-size:13px;">คลิกเพื่อเลือกช่าง...</span>';
-  } else {
-    picker.innerHTML = selectedTechs.map(name =>
-      `<span style="background:#EFF6FF;color:#1D4ED8;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;">
-        👷 ${name}
-        <span onclick="removeTech('${name}')" style="cursor:pointer;color:#93C5FD;font-size:14px;line-height:1;">×</span>
-       </span>`).join('') +
-      `<span onclick="openTechPicker()" style="color:var(--accent);font-size:12px;cursor:pointer;padding:4px 6px;">+ เพิ่ม</span>`;
-  }
-  document.getElementById('f-tech').value = selectedTechs.join(', ');
-}
-
-function removeTech(name) {
-  selectedTechs = selectedTechs.filter(n => n !== name);
-  renderTechPickerTags();
-}
-
-// ============================
-// JOB SUBTYPE TOGGLE
-// ============================
-function toggleSubtype(jobType) {
-  ['repair','rental','newcar'].forEach(jt => {
-    const el = document.getElementById('subtype-' + jt);
-    if (el) el.style.display = (jt === jobType) ? 'block' : 'none';
-  });
-  // clear all subtype checkboxes when switching
-  document.querySelectorAll('input[name="f-subtype"]').forEach(cb => cb.checked = false);
 }
 </script>
 </body>
