@@ -1308,7 +1308,6 @@ body {
       <button class="btn btn-outline" onclick="closeModal()">ปิด</button>
       <button class="btn btn-outline" onclick="openEditModal(currentViewWO.id)">✏️ แก้ไข</button>
       <button class="btn btn-warning" onclick="openRescheduleModal(currentViewWO.id)" style="background:#F59E0B;color:white;border-color:#F59E0B;">📅 ย้ายวันนัด</button>
-      <button class="btn btn-secondary" onclick="changeStatus()">🔄 เปลี่ยนสถานะ</button>
       <button class="btn btn-primary" onclick="printWO()">🖨️ พิมพ์</button>
     </div>
   </div>
@@ -1780,7 +1779,10 @@ async function saveWorkOrder() {
       toast('⚠️ บันทึกบน API ไม่สำเร็จ — บันทึก local แล้ว', 'error');
     }
   }
-  workOrders.unshift(wo);
+  // Guard against duplicate: refreshWorkOrders() may have already added this WO
+  if (!workOrders.find(w => w.id === wo.id)) {
+    workOrders.unshift(wo);
+  }
   localStorage.setItem('workOrders', JSON.stringify(workOrders));
   updateDashboard();
   return wo;
@@ -2484,7 +2486,7 @@ function viewWO(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div style="background:#F8FAFC;padding:12px;border-radius:8px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">สถานะงาน</div>
-        <select id="modal-status-select" class="form-select" style="border:none;background:none;font-weight:700;font-size:15px;padding:0;" onchange="">
+        <select id="modal-status-select" class="form-select" style="border:none;background:none;font-weight:700;font-size:15px;padding:0;" onchange="changeStatus()">
           <option ${wo.status==='รอดำเนินการ'?'selected':''}>รอดำเนินการ</option>
           <option ${wo.status==='กำลังดำเนินการ'?'selected':''}>กำลังดำเนินการ</option>
           <option ${wo.status==='เสร็จแล้ว'?'selected':''}>เสร็จแล้ว</option>
@@ -2680,20 +2682,32 @@ const JT_COLOR = {
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
+function normalizeDate(d) {
+  // Returns a Date object from any date format the sheet may store
+  if (!d) return null;
+  const s = String(d).trim();
+  if (!s || s === '-') return null;
+  // Already ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s + 'T00:00:00');
+  // JS Date.toString() e.g. "Wed Mar 18 2026 00:00:00 GMT+0700 ..."
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) return parsed;
+  return null;
+}
+
 function formatDate(d) {
-  if (!d) return '-';
-  const [y,m,day] = d.split('-');
+  const dt = normalizeDate(d);
+  if (!dt) return '-';
   const months = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${parseInt(day)} ${months[parseInt(m)]} ${parseInt(y)+543}`;
+  return `${dt.getDate()} ${months[dt.getMonth()+1]} ${dt.getFullYear()+543}`;
 }
 
 function formatDateLong(d) {
-  if (!d) return '-';
-  const [y,m,day] = d.split('-');
+  const dt = normalizeDate(d);
+  if (!dt) return '-';
   const months = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
   const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-  const dow = new Date(d).getDay();
-  return `วัน${days[dow]}ที่ ${parseInt(day)} ${months[parseInt(m)]} พ.ศ. ${parseInt(y)+543}`;
+  return `วัน${days[dt.getDay()]}ที่ ${dt.getDate()} ${months[dt.getMonth()+1]} พ.ศ. ${dt.getFullYear()+543}`;
 }
 
 function switchPlanTab(tab) {
