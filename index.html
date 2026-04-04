@@ -4119,9 +4119,46 @@ function removeTech(name) {
 // ============================
 // SYNC — Google Sheets Multi-device
 // ============================
-let syncConfig = JSON.parse(localStorage.getItem('woSyncConfig') || 'null');
-let syncSessionId = localStorage.getItem('woSyncSession') || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
-localStorage.setItem('woSyncSession', syncSessionId);
+// อ่าน syncConfig จาก localStorage + cookie (fallback)
+function loadSyncConfig() {
+  try {
+    const ls = localStorage.getItem('woSyncConfig');
+    if (ls && ls !== 'null') return JSON.parse(ls);
+  } catch(e) {}
+  // fallback: อ่านจาก cookie
+  try {
+    const m = document.cookie.match(/woSyncConfig=([^;]+)/);
+    if (m) return JSON.parse(decodeURIComponent(m[1]));
+  } catch(e) {}
+  return null;
+}
+function saveSyncConfig(cfg) {
+  try { localStorage.setItem('woSyncConfig', JSON.stringify(cfg)); } catch(e) {}
+  // เก็บใน cookie ด้วย (อายุ 365 วัน) เป็น fallback
+  try {
+    const val = encodeURIComponent(JSON.stringify(cfg));
+    document.cookie = `woSyncConfig=${val};path=/;max-age=${365*86400};SameSite=Lax`;
+  } catch(e) {}
+}
+function loadSessionId() {
+  try {
+    const ls = localStorage.getItem('woSyncSession');
+    if (ls) return ls;
+  } catch(e) {}
+  try {
+    const m = document.cookie.match(/woSyncSession=([^;]+)/);
+    if (m) return m[1];
+  } catch(e) {}
+  return 's_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+}
+function saveSessionId(id) {
+  try { localStorage.setItem('woSyncSession', id); } catch(e) {}
+  try { document.cookie = `woSyncSession=${id};path=/;max-age=${365*86400};SameSite=Lax`; } catch(e) {}
+}
+
+let syncConfig = loadSyncConfig();
+let syncSessionId = loadSessionId();
+saveSessionId(syncSessionId);
 let syncInterval = null;
 let pingInterval = null;
 let isSyncing = false;
@@ -4206,7 +4243,7 @@ function saveSyncSettings() {
       if (!res.success && res.success !== true) throw new Error(res.error || 'Response invalid');
       // เชื่อมต่อสำเร็จ
       syncConfig = { gasUrl, userName, device };
-      localStorage.setItem('woSyncConfig', JSON.stringify(syncConfig));
+      saveSyncConfig(syncConfig);
 
       statusEl.style.background = '#D1FAE5';
       statusEl.style.color = '#065F46';
@@ -4231,7 +4268,8 @@ function syncDisconnect() {
   if (!confirm('ยกเลิกการเชื่อมต่อ Sync? (ข้อมูลในเครื่องยังอยู่)')) return;
   gasPost({ action: 'offline', data: { sessionId: syncSessionId } }).catch(() => {});
   syncConfig = null;
-  localStorage.removeItem('woSyncConfig');
+  saveSyncConfig(null);
+  try { document.cookie = 'woSyncConfig=;path=/;max-age=0'; } catch(e) {}
   if (syncInterval) clearInterval(syncInterval);
   if (pingInterval) clearInterval(pingInterval);
   updateSyncUI('off');
