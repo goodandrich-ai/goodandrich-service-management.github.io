@@ -884,8 +884,22 @@ body {
       <span class="icon">📊</span> ผลงานช่าง
     </div>
   </div>
+  <!-- Online Users -->
+  <div id="sidebar-online" style="padding:8px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:11px;color:rgba(255,255,255,0.5);display:none;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#10B981;display:inline-block;"></span>
+      <span id="online-count">0 ออนไลน์</span>
+    </div>
+    <div id="online-users-list" style="display:flex;flex-direction:column;gap:3px;"></div>
+  </div>
   <div class="sidebar-footer">
-    🔧 Forklift Service System v1.0
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span>🔧 v1.0</span>
+      <div id="sync-status" style="display:flex;align-items:center;gap:4px;cursor:pointer;" onclick="openSyncSettings()" title="ตั้งค่า Sync">
+        <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#64748B;"></span>
+        <span id="sync-label" style="font-size:10px;">ไม่ได้เชื่อมต่อ</span>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -1718,6 +1732,51 @@ body {
 <div id="print-sheet"></div>
 
 <!-- TOAST -->
+<!-- SYNC SETTINGS MODAL -->
+<div class="modal-overlay" id="sync-modal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0A2540,#1E40AF);">
+      <div>
+        <div style="font-weight:700;font-size:16px;">☁️ ตั้งค่า Sync หลายเครื่อง</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);">เชื่อมต่อ Google Sheets เพื่อใช้ข้อมูลร่วมกัน</div>
+      </div>
+      <button class="modal-close" onclick="closeSyncModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label required">GAS Web App URL</label>
+        <input type="text" class="form-input" id="sync-gas-url" placeholder="https://script.google.com/macros/s/xxx/exec" style="font-size:12px;">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">วาง URL ที่ได้จาก Deploy → Web App ใน Google Apps Script</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label required">ชื่อผู้ใช้ (แสดงให้คนอื่นเห็น)</label>
+        <input type="text" class="form-input" id="sync-user-name" placeholder="เช่น ออย, สมชาย">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ชื่อเครื่อง / อุปกรณ์</label>
+        <input type="text" class="form-input" id="sync-device" placeholder="เช่น คอมออฟฟิศ, โน้ตบุ๊คส่วนตัว">
+      </div>
+
+      <!-- Sync status -->
+      <div id="sync-config-status" style="display:none;margin-top:12px;padding:12px;border-radius:8px;"></div>
+
+      <!-- Danger zone -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">การจัดการข้อมูล</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="syncPushAll()" title="ส่งข้อมูลทั้งหมดจากเครื่องนี้ขึ้น Google Sheets">⬆️ Push ข้อมูลขึ้น Sheet</button>
+          <button class="btn btn-outline btn-sm" onclick="syncPullAll()" title="ดึงข้อมูลจาก Google Sheets มาเครื่องนี้">⬇️ Pull ข้อมูลจาก Sheet</button>
+          <button class="btn btn-outline btn-sm" style="color:#DC2626;border-color:#FCA5A5;" onclick="syncDisconnect()">🔌 ยกเลิกการเชื่อมต่อ</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSyncModal()">ปิด</button>
+      <button class="btn btn-primary" onclick="saveSyncSettings()">💾 บันทึก & เชื่อมต่อ</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
 <script>
@@ -1772,6 +1831,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set today date on form
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
+
+  // เริ่ม Sync ถ้าเคยตั้งค่าไว้
+  initSync();
+
+  // ส่ง offline เมื่อปิดหน้า (ใช้ sendBeacon + Blob เพื่อส่ง JSON ได้)
+  window.addEventListener('beforeunload', () => {
+    if (syncConfig && syncConfig.gasUrl) {
+      const blob = new Blob(
+        [JSON.stringify({ action: 'offline', data: { sessionId: syncSessionId } })],
+        { type: 'text/plain' }
+      );
+      navigator.sendBeacon(syncConfig.gasUrl, blob);
+    }
+  });
 });
 
 function setDate() {
@@ -1962,6 +2035,7 @@ function saveWorkOrder() {
   localStorage.setItem('workOrders', JSON.stringify(workOrders));
   localStorage.setItem('woCounter', woCounter);
   updateDashboard();
+  syncPushWO(wo);
   return wo;
 }
 
@@ -2678,6 +2752,7 @@ function deleteWO() {
   const wo = workOrders.find(w => w.id === editingWOId);
   if (!wo) return;
   if (!confirm(`ยืนยันลบใบสั่งงาน ${wo.no} (${wo.company}) ?\n\nการลบไม่สามารถกู้คืนได้`)) return;
+  syncDeleteWO(editingWOId);
   workOrders = workOrders.filter(w => w.id !== editingWOId);
   localStorage.setItem('workOrders', JSON.stringify(workOrders));
   toast(`🗑️ ลบใบสั่งงาน ${wo.no} แล้ว`, 'error');
@@ -2739,6 +2814,7 @@ function saveEdit() {
     currentViewWO = workOrders[idx];
   }
 
+  syncPushWO(workOrders[idx]);
   toast(`✅ บันทึกการแก้ไข ${workOrders[idx].no} เรียบร้อย`, 'success');
   closeEditModal();
   renderWOList();
@@ -2884,6 +2960,7 @@ function changeStatus() {
     workOrders[idx].status = newStatus;
     currentViewWO = workOrders[idx];
     localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    syncPushWO(workOrders[idx]);
     toast(`🔄 เปลี่ยนสถานะเป็น "${newStatus}"`, 'success');
     closeModal();
     renderWOList();
@@ -3006,6 +3083,7 @@ function saveLaborCost() {
     });
     currentViewWO = workOrders[idx];
     localStorage.setItem('workOrders', JSON.stringify(workOrders));
+    syncPushWO(workOrders[idx]);
     toast(`✅ บันทึกค่าแรง ${totalCost.toLocaleString()} บาท เรียบร้อย`, 'success');
     document.getElementById('labor-modal').classList.remove('open');
     closeModal();
@@ -3346,6 +3424,7 @@ function saveReschedule() {
   wo.updatedAt = new Date().toISOString();
 
   localStorage.setItem('workOrders', JSON.stringify(workOrders));
+  syncPushWO(wo);
   toast(`📅 ย้ายวันนัด ${wo.no} → ${formatDate(newDate)} เรียบร้อย`, 'success');
   closeRescheduleModal();
   renderDailyPlan();
@@ -3949,10 +4028,15 @@ function saveTechnician() {
   const phone = document.getElementById('tm-phone').value.trim();
   if (editingTechId) {
     const idx = technicians.findIndex(x => x.id === editingTechId);
-    if (idx > -1) Object.assign(technicians[idx], { name, nick, phone });
+    if (idx > -1) {
+      Object.assign(technicians[idx], { name, nick, phone });
+      syncPushTech(technicians[idx]);
+    }
     toast('✅ อัปเดตข้อมูลช่างแล้ว', 'success');
   } else {
-    technicians.push({ id: 'tech_' + Date.now(), name, nick, phone });
+    const newTech = { id: 'tech_' + Date.now(), name, nick, phone };
+    technicians.push(newTech);
+    syncPushTech(newTech);
     toast('✅ เพิ่มช่างแล้ว', 'success');
   }
   saveTechniciansList();
@@ -3964,6 +4048,7 @@ function deleteTechnician(id) {
   const t = technicians.find(x => x.id === id);
   if (!t) return;
   if (!confirm(`ลบ "${t.name}" ออกจากทะเบียนช่าง?`)) return;
+  syncDeleteTech(id);
   technicians = technicians.filter(x => x.id !== id);
   saveTechniciansList();
   renderTechList();
@@ -4029,6 +4114,287 @@ function renderTechPickerTags() {
 function removeTech(name) {
   selectedTechs = selectedTechs.filter(n => n !== name);
   renderTechPickerTags();
+}
+
+// ============================
+// SYNC — Google Sheets Multi-device
+// ============================
+let syncConfig = JSON.parse(localStorage.getItem('woSyncConfig') || 'null');
+let syncSessionId = localStorage.getItem('woSyncSession') || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
+localStorage.setItem('woSyncSession', syncSessionId);
+let syncInterval = null;
+let pingInterval = null;
+let isSyncing = false;
+
+// Helper: POST to GAS (follow redirects)
+function gasPost(data) {
+  if (!syncConfig || !syncConfig.gasUrl) return Promise.reject('ไม่ได้เชื่อมต่อ');
+  return fetch(syncConfig.gasUrl, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  }).then(r => r.json());
+}
+
+// Helper: GET from GAS
+function gasGet(params) {
+  if (!syncConfig || !syncConfig.gasUrl) return Promise.reject('ไม่ได้เชื่อมต่อ');
+  const url = syncConfig.gasUrl + '?' + new URLSearchParams(params).toString();
+  return fetch(url, { redirect: 'follow' }).then(r => r.json());
+}
+
+function initSync() {
+  if (syncConfig && syncConfig.gasUrl) {
+    updateSyncUI('connecting');
+    syncPing();
+    syncPullAll(true);
+    pingInterval = setInterval(syncPing, 30000);
+    syncInterval = setInterval(() => syncPullAll(true), 60000);
+  }
+}
+
+function updateSyncUI(status) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  const map = {
+    connected:  { bg:'#10B981', text:'เชื่อมต่อแล้ว', color:'#10B981' },
+    syncing:    { bg:'#F59E0B', text:'กำลัง sync...', color:'#F59E0B' },
+    connecting: { bg:'#3B82F6', text:'กำลังเชื่อมต่อ...', color:'#3B82F6' },
+    error:      { bg:'#EF4444', text:'เชื่อมต่อผิดพลาด', color:'#EF4444' },
+  };
+  const s = map[status] || { bg:'#64748B', text:'ไม่ได้เชื่อมต่อ', color:'rgba(255,255,255,0.4)' };
+  dot.style.background = s.bg;
+  label.textContent = s.text;
+  label.style.color = s.color;
+}
+
+function openSyncSettings() {
+  if (syncConfig) {
+    document.getElementById('sync-gas-url').value = syncConfig.gasUrl || '';
+    document.getElementById('sync-user-name').value = syncConfig.userName || '';
+    document.getElementById('sync-device').value = syncConfig.device || '';
+  }
+  const statusEl = document.getElementById('sync-config-status');
+  if (statusEl) statusEl.style.display = 'none';
+  document.getElementById('sync-modal').classList.add('open');
+}
+
+function closeSyncModal() {
+  document.getElementById('sync-modal').classList.remove('open');
+}
+
+function saveSyncSettings() {
+  const gasUrl = document.getElementById('sync-gas-url').value.trim();
+  const userName = document.getElementById('sync-user-name').value.trim();
+  const device = document.getElementById('sync-device').value.trim();
+
+  if (!gasUrl) { toast('กรุณาวาง GAS Web App URL', 'error'); return; }
+  if (!userName) { toast('กรุณาใส่ชื่อผู้ใช้', 'error'); return; }
+
+  // ทดสอบเชื่อมต่อก่อนบันทึก
+  const statusEl = document.getElementById('sync-config-status');
+  statusEl.style.display = 'block';
+  statusEl.style.background = '#DBEAFE';
+  statusEl.style.color = '#1E40AF';
+  statusEl.textContent = '🔄 กำลังทดสอบการเชื่อมต่อ...';
+
+  fetch(gasUrl + '?action=getOnline', { redirect: 'follow' })
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success && res.success !== true) throw new Error(res.error || 'Response invalid');
+      // เชื่อมต่อสำเร็จ
+      syncConfig = { gasUrl, userName, device };
+      localStorage.setItem('woSyncConfig', JSON.stringify(syncConfig));
+
+      statusEl.style.background = '#D1FAE5';
+      statusEl.style.color = '#065F46';
+      statusEl.textContent = '✅ เชื่อมต่อสำเร็จ!';
+
+      toast('✅ เชื่อมต่อ Sync สำเร็จ!', 'success');
+
+      if (syncInterval) clearInterval(syncInterval);
+      if (pingInterval) clearInterval(pingInterval);
+      initSync();
+
+      setTimeout(() => closeSyncModal(), 1000);
+    })
+    .catch(err => {
+      statusEl.style.background = '#FEE2E2';
+      statusEl.style.color = '#991B1B';
+      statusEl.innerHTML = `❌ เชื่อมต่อไม่ได้!<br><span style="font-size:11px;">ตรวจสอบ URL และการ Deploy อีกครั้ง<br>${err.message||err}</span>`;
+    });
+}
+
+function syncDisconnect() {
+  if (!confirm('ยกเลิกการเชื่อมต่อ Sync? (ข้อมูลในเครื่องยังอยู่)')) return;
+  gasPost({ action: 'offline', data: { sessionId: syncSessionId } }).catch(() => {});
+  syncConfig = null;
+  localStorage.removeItem('woSyncConfig');
+  if (syncInterval) clearInterval(syncInterval);
+  if (pingInterval) clearInterval(pingInterval);
+  updateSyncUI('off');
+  updateOnlineList([]);
+  toast('🔌 ยกเลิกการเชื่อมต่อแล้ว');
+}
+
+// Ping — บอกว่ายังออนไลน์ (ใช้ GET เพื่อความเสถียร)
+function syncPing() {
+  if (!syncConfig || !syncConfig.gasUrl) return;
+  const currentPage = document.querySelector('.page.active')?.id?.replace('page-','') || '';
+  gasGet({
+    action: 'ping',
+    sessionId: syncSessionId,
+    userName: syncConfig.userName || '',
+    device: syncConfig.device || '',
+    page: currentPage,
+  }).then(res => {
+    if (res.success) updateSyncUI('connected');
+    // ดึงสถานะออนไลน์
+    return gasGet({ action: 'getOnline' });
+  }).then(res => {
+    if (res && res.success) updateOnlineList(res.data || []);
+  }).catch(() => {
+    updateSyncUI('error');
+  });
+}
+
+function updateOnlineList(users) {
+  const wrap = document.getElementById('sidebar-online');
+  const countEl = document.getElementById('online-count');
+  const listEl = document.getElementById('online-users-list');
+  if (!wrap) return;
+
+  if (!users || !users.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  countEl.textContent = `${users.length} ออนไลน์`;
+
+  const pageLabel = {
+    'dashboard':'ภาพรวม','create-wo':'สร้างงาน','wo-list':'รายการ',
+    'daily-plan':'แพลนงาน','tech-manage':'จัดการช่าง','tech-performance':'ผลงาน'
+  };
+  listEl.innerHTML = users.map(u => {
+    const isMe = u.sessionId === syncSessionId;
+    const pg = pageLabel[u.page] || u.page || '';
+    return `<div style="display:flex;align-items:center;gap:6px;font-size:10px;${isMe?'color:#10B981;font-weight:700;':'color:rgba(255,255,255,0.6);'}">
+      <span style="width:6px;height:6px;border-radius:50%;background:${isMe?'#10B981':'#3B82F6'};flex-shrink:0;"></span>
+      ${u.userName||'?'}${u.device?' ('+u.device+')':''}${isMe?' ← คุณ':''}
+      ${pg?'<span style="opacity:.5;margin-left:auto;">'+pg+'</span>':''}
+    </div>`;
+  }).join('');
+}
+
+// Push — ส่งข้อมูลทั้งหมดขึ้น Sheet
+function syncPushAll() {
+  if (!syncConfig || !syncConfig.gasUrl) { toast('กรุณาเชื่อมต่อ Sync ก่อน', 'error'); return; }
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncUI('syncing');
+  toast('⬆️ กำลัง Push ข้อมูลขึ้น Sheet...', 'success');
+
+  Promise.all([
+    gasPost({ action: 'bulkUpsert', sheet: 'workOrders', data: workOrders }),
+    gasPost({ action: 'bulkUpsert', sheet: 'technicians', data: technicians }),
+    gasPost({ action: 'saveConfig', targetSheet: 'woConfig', data: { woCounter: String(woCounter) } }),
+  ]).then(results => {
+    const allOk = results.every(r => r.success);
+    if (allOk) {
+      toast('✅ Push เสร็จ! (' + workOrders.length + ' ใบสั่งงาน, ' + technicians.length + ' ช่าง)', 'success');
+      updateSyncUI('connected');
+    } else {
+      toast('⚠️ Push บางส่วนผิดพลาด', 'error');
+      updateSyncUI('error');
+    }
+  }).catch(err => {
+    toast('❌ Push ผิดพลาด: ' + (err.message||err), 'error');
+    updateSyncUI('error');
+  }).finally(() => { isSyncing = false; });
+}
+
+// Pull — ดึงข้อมูลจาก Sheet มาเครื่องนี้
+function syncPullAll(silent) {
+  if (!syncConfig || !syncConfig.gasUrl) {
+    if (!silent) toast('กรุณาเชื่อมต่อ Sync ก่อน', 'error');
+    return;
+  }
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncUI('syncing');
+  if (!silent) toast('⬇️ กำลังดึงข้อมูลจาก Sheet...', 'success');
+
+  gasGet({ action: 'getWO' })
+    .then(res => {
+      if (!res.success || !res.data) throw new Error(res.error || 'ไม่มีข้อมูล');
+
+      const d = res.data;
+
+      // อัพเดต Work Orders
+      if (d.workOrders && d.workOrders.length) {
+        d.workOrders.forEach(wo => {
+          ['techs','subtype','forkliftNos','docs','contactChannels','rescheduleHistory'].forEach(f => {
+            if (typeof wo[f] === 'string' && wo[f]) {
+              try { wo[f] = JSON.parse(wo[f]); } catch(e) {}
+            }
+            if (!wo[f]) wo[f] = [];
+          });
+          ['laborCost','laborHours','laborNumTechs','workHours'].forEach(f => {
+            if (wo[f] !== '' && wo[f] !== undefined) wo[f] = Number(wo[f]);
+          });
+        });
+        workOrders = d.workOrders;
+        localStorage.setItem('workOrders', JSON.stringify(workOrders));
+      }
+
+      // อัพเดต Technicians
+      if (d.technicians && d.technicians.length) {
+        technicians = d.technicians;
+        localStorage.setItem('technicians', JSON.stringify(technicians));
+      }
+
+      // อัพเดต Counter
+      if (d.woConfig && d.woConfig.woCounter) {
+        const remoteCounter = parseInt(d.woConfig.woCounter);
+        if (remoteCounter > woCounter) {
+          woCounter = remoteCounter;
+          localStorage.setItem('woCounter', woCounter);
+        }
+      }
+
+      if (d.online) updateOnlineList(d.online);
+
+      updateDashboard();
+      renderWOList();
+
+      updateSyncUI('connected');
+      if (!silent) toast('✅ ดึงข้อมูลเสร็จ! (' + workOrders.length + ' ใบสั่งงาน)', 'success');
+    })
+    .catch(err => {
+      updateSyncUI('error');
+      if (!silent) toast('❌ ดึงข้อมูลผิดพลาด: ' + (err.message||err), 'error');
+    })
+    .finally(() => { isSyncing = false; });
+}
+
+// Auto-sync เมื่อบันทึก/แก้ไข WO
+function syncPushWO(wo) {
+  gasPost({ action: 'upsert', sheet: 'workOrders', data: wo }).catch(() => {});
+  gasPost({ action: 'saveConfig', targetSheet: 'woConfig', data: { woCounter: String(woCounter) } }).catch(() => {});
+}
+
+function syncDeleteWO(id) {
+  gasPost({ action: 'delete', sheet: 'workOrders', id }).catch(() => {});
+}
+
+function syncPushTech(tech) {
+  gasPost({ action: 'upsert', sheet: 'technicians', data: tech }).catch(() => {});
+}
+
+function syncDeleteTech(id) {
+  gasPost({ action: 'delete', sheet: 'technicians', id }).catch(() => {});
 }
 
 // ============================
