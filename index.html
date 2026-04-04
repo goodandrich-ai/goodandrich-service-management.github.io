@@ -1832,7 +1832,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-date').value = today;
 
-  // เริ่ม Sync ถ้าเคยตั้งค่าไว้
+  // เริ่ม Sync อัตโนมัติ — ถ้ายังไม่มีชื่อ ให้ถามครั้งเดียว
+  if (syncConfig && syncConfig.gasUrl && !syncConfig.userName) {
+    const name = prompt('กรุณาใส่ชื่อของคุณ (แสดงให้คนอื่นเห็นว่าใครออนไลน์):');
+    if (name) {
+      syncConfig.userName = name.trim();
+      syncConfig.device = navigator.userAgent.includes('Mobile') ? 'มือถือ' : 'คอม';
+      saveSyncConfig(syncConfig);
+    }
+  }
   initSync();
 
   // ส่ง offline เมื่อปิดหน้า (ใช้ sendBeacon + Blob เพื่อส่ง JSON ได้)
@@ -4156,7 +4164,11 @@ function saveSessionId(id) {
   try { document.cookie = `woSyncSession=${id};path=/;max-age=${365*86400};SameSite=Lax`; } catch(e) {}
 }
 
-let syncConfig = loadSyncConfig();
+// ── ตั้งค่า Sync อัตโนมัติ (ไม่ต้องกดเชื่อมต่อ) ──
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzU7MmVr5nNg4wcTNa-aaPOuuBHiIwaSrs1apy-1OmaBCF5zbXf_9DFaiwMafxAPBk-Hg/exec';
+let syncConfig = loadSyncConfig() || { gasUrl: DEFAULT_GAS_URL, userName: '', device: '' };
+// ถ้ายังไม่มี gasUrl ให้ใช้ default
+if (!syncConfig.gasUrl) syncConfig.gasUrl = DEFAULT_GAS_URL;
 let syncSessionId = loadSessionId();
 saveSessionId(syncSessionId);
 let syncInterval = null;
@@ -4385,6 +4397,12 @@ function syncPullAll(silent) {
         });
         workOrders = d.workOrders;
         localStorage.setItem('workOrders', JSON.stringify(workOrders));
+      } else if (workOrders.length && (!d.workOrders || !d.workOrders.length)) {
+        // Sheet ว่าง แต่ local มีข้อมูล → auto-push ขึ้น Sheet
+        if (!silent) toast('⬆️ กำลัง Push ข้อมูลขึ้น Sheet อัตโนมัติ...', 'success');
+        gasPost({ action: 'bulkUpsert', sheet: 'workOrders', data: workOrders }).catch(() => {});
+        gasPost({ action: 'bulkUpsert', sheet: 'technicians', data: technicians }).catch(() => {});
+        gasPost({ action: 'saveConfig', targetSheet: 'woConfig', data: { woCounter: String(woCounter) } }).catch(() => {});
       }
 
       // อัพเดต Technicians
